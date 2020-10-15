@@ -41,7 +41,7 @@ def timer(func):
 
 # code is a very aggressive
 # hack on this repository:
-# https://github.com/ericjang/pyN
+# https://github.com/ericjang/pyN, of which it now resembles very little.
 @jit
 def update_currents(amp, i, t, dt,start,stop):   
   scalar = 0
@@ -49,61 +49,10 @@ def update_currents(amp, i, t, dt,start,stop):
     scalar = amp
   return scalar
 
-#@jit
-#def I_inj(t,delay,duration,amplitude):#
-#	return 0*(t<delay) +amplitude*(t>delay) +0*(t>delay+duration) # a scalar value.
-
-'''
-V[0]    = v0                # this gives us a chance to say what the membrane voltage starts at
-                                # so we can draw initial conditions from the Boltzmann dist. later
-# Run model
-for i in xrange(N-1):
-    V[i+1,:] = V[i,:] + (delta/C)*( -g_L*(V[i,:] - E_L) + g_L*delta_T*np.exp((V[i,:] - V_T)/delta_T) - w[i,:] + inputCurrent[:,i+1]) + np.sqrt(noiseT)*randn(1,M)
-    w[i+1,:] = w[i,:] + (delta/tau_w)*(a*(V[i,:] - E_L) - w[i,:])
-
-    # spiking mechanism
-    ind = where(V[i+1,:] >= V_peak)
-    if size(ind[0]) > 0:
-        V[i+1,ind]      = E_L
-        w[i+1,ind]      = w[i,ind] + b
-        spikes[i+1,ind] = 1
-        [sptimes[j].append(T[i+1]) for j in ind[0]]
-
-return [V.transpose(),w.transpose(),spikes.transpose(),sptimes]  
-'''
-'''
-@jit
-def update_state(i, T, t, dt,I_ext,v,w,spike_raster,v_reset,b,a,spike_delta,v_rest,tau_m,tau_w,v_thresh,delta_T,cm):
- 
-  prev_spiked = np.nonzero(spike_raster[:,i-1] == True)
-  v[prev_spiked] = v_reset
-  w[prev_spiked] += b
-  #compute deltas and apply to state variables
-  dv  = (((v_rest-v) + \
-        delta_T*np.exp((v - v_thresh)/delta_T))/tau_m + \
-        (I_ext - w)/cm) *dt
-  v += dv
-  w += dt * (a*(v - v_rest) - w)/tau_w * dt
-  #decide whether to spike or not
-  spiked = np.nonzero(v > v_thresh)
-  ### https://github.com/lmcintosh/masters-thesis/blob/master/mastersFunctions.py
-  #ind = np.where(v >= v_thresh)
-  #if  np.size(ind[0]) > 0:
-  #pass
-    #print(ind)
-    #spikes[i+1,ind] = 1
-  ###
-  v[spiked] = spike_delta
-  spike_raster[spiked,i] = 1
-
-  return v,w,spike_raster,len(spike_raster)
-'''  
-#@timer
-#
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @jit(nopython=True)
-def update_state_new_new(T, dt,v,w,
+def update_state(T, dt,v,w,
                         v_reset,b,a,spike_raster,
                         spike_delta,v_rest,tau_m,
                         tau_w,v_thresh,delta_T,cm,time_trace,amp,start,stop):
@@ -112,18 +61,13 @@ def update_state_new_new(T, dt,v,w,
   spike_raster = [0 for ix in range(0,len(time_trace))]
   vm = []
   
-  #v = v[0]
-  #w = w[0]
   for t_ind in range(0,len(time_trace)):
     t = time_trace[t_ind]
     if i!=0:
       I_scalar = 0
       if start <= t <= stop:
         I_scalar = amp
-      #else:
-      #  I_scalar = 0
 
-      #for indx in range(0,i-1):
       if spike_raster[i-1]:
         v = v_reset
         w += b
@@ -141,47 +85,9 @@ def update_state_new_new(T, dt,v,w,
     i+=1
   #print(vm)
   return len(spike_raster),vm
-'''
-#@timer
-#@jit(nopython=True)
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
-def update_state_new(T, dt,v,w,spike_raster,v_reset,b,a,spike_delta,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,time_trace,amp,start,stop):
-  i = 0
-  vm = []#np.array([0 for i in time_trace])
-  for t_ind in range(0,len(time_trace)):
-    t = time_trace[t_ind]
-    if i!=0:
-      I_scalar = 0
-      if start <= t <= stop:
-        I_scalar = amp
-
-      prev_spiked = np.nonzero(spike_raster[:,i-1] == True)
-      v[prev_spiked] = v_reset
-      w[prev_spiked] += b
-      #compute deltas and apply to state variables
-      dv  = (((v_rest-v) + \
-            delta_T*np.exp((v - v_thresh)/delta_T))/tau_m + \
-            (I_scalar - w)/cm) *dt
-      v += dv
-      w += dt * (a*(v - v_rest) - w)/tau_w * dt
-      #decide whether to spike or not
-      spiked = np.nonzero(v > v_thresh)
-
-      ### https://github.com/lmcintosh/masters-thesis/blob/master/mastersFunctions.py
-      v[spiked] = spike_delta
-      spike_raster[spiked,i] = 1
-      vm.append(v[0])
-    i+=1
-
-
-  return v,w,spike_raster,len(spike_raster),vm
-'''
 @jit#(nopython=True)
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
-def evaluate_vm_new(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
-  n_spikes,vm = update_state_new_new(T=T, 
+def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
+  n_spikes,vm = update_state(T=T, 
                                     dt=dt,
                                     v=v,
                                     w=w,
@@ -196,47 +102,17 @@ def evaluate_vm_new(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_r
 
   
   return vm,n_spikes
-'''
-@jit(nopython=True)
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
-  vm = []
-  i = 0
-  #for t in time_trace[1:]:
-  for t in time_trace:
-    if i!=0:
-      I_scalar = update_currents(amp, i=i, t=t, dt=dt,start=start,stop=stop)
-      v,w,spike_raster,n_spikes = update_state(i=i, T=T, t=t, dt=dt,
-                                        I_ext=I_scalar,v=v,
-                                        w=w,spike_raster=spike_raster,
-                                        v_reset=v_reset,
-                                        b=b,a=a,spike_delta=spike_delta,
-                                        v_rest=v_rest,tau_m=tau_m,tau_w=tau_w,
-                                        v_thresh=v_thresh, delta_T =delta_T,cm=cm)
-      vm.append(v[0])
-    i+=1
-  return vm,n_spikes
-'''
 
 
 
-class ADEXPBackend(Backend):
+class ADEXP():
   name = 'ADEXP'
-  def init_backend(self, attrs={}, DTC=None):
+  def __init__(self, attrs={}):
     self.model._backend.use_memory_cache = False
     self.attrs = attrs
-    #print(self.attrs)
-    #self.current_src_name = current_src_name
-    #self.cell_name = cell_name
     self.vM = None
-    #self.attrs = attrs
-    #self.debug = debug
     self.temp_attrs = None
-    #def __init__(self, name, cm=0.281,
-    # v_spike=-40.0, v_reset=-70.6, v_rest=-70.6, tau_m=9.3667, a=4.0, b=0.0805, delta_T=2.0,tau_w=144.0,
-    # v_thresh=-50.4, spike_delta=30):
-
+    
     BAE1 = {}
     BAE1['cm']=0.281
     BAE1['v_spike']=-40.0
@@ -252,7 +128,6 @@ class ADEXPBackend(Backend):
     BAE1['spike_delta']=30
 
     self.default_attrs = BAE1
-    super(ADEXPBackend,self).init_backend()
 
     if type(DTC) is not type(None):
         if type(DTC.attrs) is not type(None):
@@ -302,12 +177,7 @@ class ADEXPBackend(Backend):
     start = I_ext['start']
     stop = I_ext['stop']
 
-
-    #vm,n_spikes = evaluate_vm(time_trace,dt,T,v,w,b,a,
-    #                  spike_delta,spike_raster,v_reset,v_rest,
-    #                  tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop)
-
-    vm,n_spikes = evaluate_vm_new(time_trace,dt,T,v,w,b,a,
+    vm,n_spikes = evaluate_vm(time_trace,dt,T,v,w,b,a,
                       spike_delta,spike_raster,v_reset,v_rest,
                       tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop)
     #print(vm)
@@ -316,29 +186,6 @@ class ADEXPBackend(Backend):
 
   def get_spike_count(self):
     return self.n_spikes
-    #thresh = threshold_detection(self.vM)
-    #assert self.n_spikes == len(thresh)
-    #return len(thresh)
-  '''
-    def set_attrs(self,attrs):
-      self.default_attrs.update(attrs)
-      attrs = self.default_attrs
-      self.attrs = attrs
-      
-      #if not hasattr(self.model,'attrs'):# is None:
-      #    self.model.attrs = {}
-      #    self.model.attrs.update(attrs)
-      #else:
-      self.model.attrs.update(attrs)
-      
-      #self.model_ = ADEXPopulation(name='Charly the Neuron',N=1)
-      #self.neuron = Network(populations=[self.model_],attrs = attrs)
-    
-      return self
-  '''
- # def set_attrs(self, attrs):
- #     self.attrs = attrs
- #     self.model.attrs.update(attrs)
 
   def set_attrs(self,attrs):
       self.default_attrs.update(attrs)
@@ -362,11 +209,6 @@ class ADEXPBackend(Backend):
       stopTimeMs: duration in milliseconds
       """
       self.tstop = float(stop_time.rescale(pq.ms))
-
-  #@timer
-  #@cython.boundscheck(False)
-  #@cython.wraparound(False)
-  #@jit
   def inject_square_current(self,current):#, section = None, debug=False):
     """Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
     Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
@@ -399,10 +241,6 @@ class ADEXPBackend(Backend):
     vM = AnalogSignal(vm,
                           units = voltage_units,
                           sampling_period = 0.25*pq.ms)
-    #import asciiplotlib as apl
-    #fig = apl.figure()
-    #fig.plot([float(f) for f in vM.times], [float(f) for f in vM], width=100, height=20)
-    #fig.show()
 
     self.vM = vM
     self.n_spikes = n_spikes
