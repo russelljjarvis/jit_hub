@@ -1,20 +1,11 @@
 
 
 from quantities import mV, ms, s, V
-import sciunit
 from neo import AnalogSignal
-import neuronunit.capabilities as cap
 import numpy as np
-#from .base import Backend
-from .base import *
 import quantities as qt
 
 import quantities as pq
-#import matplotlib as mpl
-try:
-    import asciiplotlib as apl
-except:
-    pass
 import numpy
 voltage_units = mV
 import cython
@@ -27,17 +18,6 @@ from numba import jit
 
 import numpy as np
 from numba import jit
-import time
-def timer(func):
-    def inner(*args, **kwargs):
-        t1 = time.time()
-        f = func(*args, **kwargs)
-        t2 = time.time()
-        print('time taken on block {0} '.format(t2-t1))
-        return f
-    return inner
-
-#@jit
 
 # code is a very aggressive
 # hack on this repository:
@@ -56,7 +36,6 @@ def update_state(T, dt,v,w,
                         v_reset,b,a,spike_raster,
                         spike_delta,v_rest,tau_m,
                         tau_w,v_thresh,delta_T,cm,time_trace,amp,start,stop):
-  #print(v,w)
   i = 0
   spike_raster = [0 for ix in range(0,len(time_trace))]
   vm = []
@@ -83,7 +62,6 @@ def update_state(T, dt,v,w,
         spike_raster[i] = 0
       vm.append(v)
     i+=1
-  #print(vm)
   return len(spike_raster),vm
 @jit#(nopython=True)
 def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
@@ -108,7 +86,6 @@ def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,
 class ADEXP():
   name = 'ADEXP'
   def __init__(self, attrs={}):
-    self.model._backend.use_memory_cache = False
     self.attrs = attrs
     self.vM = None
     self.temp_attrs = None
@@ -129,30 +106,18 @@ class ADEXP():
 
     self.default_attrs = BAE1
 
-    if type(DTC) is not type(None):
-        if type(DTC.attrs) is not type(None):
-            print('gets here')
-            #self.set_attrs(DTC.attrs)
-            self.attrs = attrs
-        if type(DTC.attrs) is type(None):
-          self.attrs = self.default_attrs
-          #self.set_attrs(self.default_attrs)
-
   def simulate(self, attrs={}, T=50,dt=0.25,integration_time=30, I_ext={},spike_delta=50):
     spike_delta = spike_delta
     N = 1
-    w = 1#np.ones(N)
+    w = 1
 
     dt         = dt
     time_trace = np.arange(0,T+dt,dt)#time array
     #I_ext
     len_time_trace = len(time_trace)
-    #self.T = T
     integration_time = 30.0
     spike_raster = np.zeros((1, len_time_trace))
-    #self.psc = np.zeros((self.N, len_time_trace))
     integrate_window = np.int(np.ceil(integration_time/dt))
-    #dt = dt
 
     if integrate_window > len_time_trace:
       integrate_window = len_time_trace #if we are running a short simulation then integrate window will overflow available time slots!
@@ -194,14 +159,10 @@ class ADEXP():
       if not hasattr(self.model,'attrs'):
         self.model.attrs = {}
       self.model.attrs.update(attrs)
-      #print(self.model._backend.attrs)
-      #import pdb
-      #pdb.set_trace()
 
 
   def get_membrane_potential(self):
     """Must return a neo.core.AnalogSignal.
-    And must destroy the hoc vectors that comprise it.
     """
     return self.vM
   def set_stop_time(self, stop_time = 650*pq.ms):
@@ -223,10 +184,10 @@ class ADEXP():
         c = current['injected_square_current']
     else:
         c = current
-    amplitude = float(c['amplitude'])#/1000.0#*10.0#*1000.0 #this needs to be in every backends
-    duration = float(c['duration'])#/dt#/dt.rescale('ms')
-    delay = float(c['delay'])#/dt#.rescale('ms')
-    tMax = delay + duration + 200.0#/dt#*pq.ms
+    amplitude = float(c['amplitude'])
+    duration = float(c['duration'])
+    delay = float(c['delay'])
+    tMax = delay + duration + 200.0
 
     self.set_stop_time(stop_time = tMax*pq.ms)
     tMax = float(self.tstop)
@@ -237,7 +198,7 @@ class ADEXP():
         attrs=temp_attrs,\
         T=tMax,\
         dt=0.25,\
-        I_ext=stim)#,v_rest=v_rest)
+        I_ext=stim)
     vM = AnalogSignal(vm,
                           units = voltage_units,
                           sampling_period = 0.25*pq.ms)
