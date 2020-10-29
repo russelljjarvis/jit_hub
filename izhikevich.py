@@ -235,7 +235,7 @@ class IZHIModel():
                 if self.attrs['celltype'] == 7:
                     #print('gets into multiple regimes',self.attrs['celltype'])
 
-                    v = get_vm_matlab_six(**everything)
+                    v = get_vm_matlab_seven(**everything)
 
             self.vM = AnalogSignal(v,
                                 units=pq.mV,
