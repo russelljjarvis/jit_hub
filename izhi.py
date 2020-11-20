@@ -6,14 +6,14 @@ import numpy as np
 import quantities as pq
 import numpy
 voltage_units = mV
-
+import copy
 from elephant.spike_train_generation import threshold_detection
 
 from numba import jit, autojit
 import cython
 @jit(nopython=True)
 def get_vm_matlab_four(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6, 
+         a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0):
     tau = dt = 0.125
@@ -37,16 +37,16 @@ def get_vm_matlab_four(C=89.7960714285714,
             if (u[i]+d)<670:
                 u[i+1] = u[i+1]+d; # Reset recovery variable
             else:
-                u[i+1] = 670;                
-            
+                u[i+1] = 670;
+
     return v
 
 @jit(nopython=True)
 def get_vm_matlab_five(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6, 
+         a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0):
-    
+
     tau= dt = 0.125; #dt
     #I = 0
     v = np.zeros(N)
@@ -75,7 +75,7 @@ def get_vm_matlab_five(C=89.7960714285714,
 
 @jit(nopython=True)
 def get_vm_matlab_seven(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6, 
+         a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0):
     tau= dt = 0.125; #dt
@@ -98,19 +98,19 @@ def get_vm_matlab_seven(C=89.7960714285714,
             b=2;
         else:
             b=10;
-        
+
         u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]);
         if v[i+1]>=vPeak:
             v[i]=vPeak;
             v[i+1]=c;
             u[i+1]=u[i+1]+d;  # reset u, except for FS cells
 
-            
+
     return v
 
 @jit(nopython=True)
 def get_vm_matlab_six(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6, 
+         a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0):
     tau= dt = 0.125; #dt
@@ -130,7 +130,7 @@ def get_vm_matlab_six(C=89.7960714285714,
 
 
         u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]);
-        if v[i+1] > -65: 
+        if v[i+1] > -65:
             b=0;
         else:
             b=15;
@@ -138,14 +138,14 @@ def get_vm_matlab_six(C=89.7960714285714,
             v[i]= vPeak + 0.1*u[i+1];
             v[i+1] = c-0.1*u[i+1]; # Reset voltage
             u[i+1]=u[i+1]+d;
-            
+
     return v
 
 
 
 @jit(nopython=True)
 def get_vm_matlab_one_two_three(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6, 
+         a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,
           N=0,start=0,stop=0,amp=0):
@@ -160,17 +160,17 @@ def get_vm_matlab_one_two_three(C=89.7960714285714,
         if start <= i <= stop:
             I = amp
         # forward Euler method
-        v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I) / C    
+        v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I) / C
         u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
         #u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
 
         if v[i+1]>=vPeak:
             v[i]=vPeak
             v[i+1]=c
-            u[i+1]=u[i+1]+d  # reset u, except for FS cells            
+            u[i+1]=u[i+1]+d  # reset u, except for FS cells
     return v
-        
-    
+
+
 
 class IZHIModel():
 
@@ -181,9 +181,9 @@ class IZHIModel():
         self.vM = None
         self.attrs = attrs
         self.temp_attrs = None
-        self.default_attrs = {'C':89.7960714285714, 
-            'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6, 
-            'vPeak':(86.364525297619-65.2261863636364), 
+        self.default_attrs = {'C':89.7960714285714,
+            'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
+            'vPeak':(86.364525297619-65.2261863636364),
             'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
 
         if type(attrs) is not type(None):
@@ -216,14 +216,14 @@ class IZHIModel():
             everything = copy.copy(self.attrs)
             if hasattr(self,'Iext'):
                 everything.update({'Iext':self.Iext})
-            
+
             if 'current_inj' in everything.keys():
                 everything.pop('current_inj',None)
             everything = copy.copy(self.attrs)
 
             self.attrs['celltype'] = round(self.attrs['celltype'])
-            if self.attrs['celltype'] <= 3:   
-                everything.pop('celltype',None)         
+            if self.attrs['celltype'] <= 3:
+                everything.pop('celltype',None)
                 v = get_vm_matlab_one_two_three(**everything)
             else:
                 if self.attrs['celltype'] == 4:
@@ -241,43 +241,46 @@ class IZHIModel():
                                 units=pq.mV,
                                 sampling_period=0.125*pq.ms)
 
-            
+
         return self.vM
 
     def set_attrs(self, attrs):
         self.attrs = attrs
-        self.model.attrs.update(attrs)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def inject_square_current(self, current):
-        """Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
+        """
+        Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
         Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
         where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
         Description: A parameterized means of applying current injection into defined
         Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
 
         """
-        
-        attrs = copy.copy(self.model.attrs)
+
+        attrs = self.attrs
         if attrs is None:
             attrs = self.default_attrs
 
         self.attrs = attrs
-        if 'injected_square_current' in current.keys():
-            c = current['injected_square_current']
-        else:
+        #if 'injected_square_current' in current.keys():
+        #    c = current['injected_square_current']
+        #else:
+        if 'delay' in current.keys() and 'duration' in current.keys():
+            square = True
             c = current
-        amplitude = float(c['amplitude'])
-        duration = float(c['duration'])
-        delay = float(c['delay'])
-        tMax = delay + duration + 200.0
 
-        self.set_stop_time(tMax*pq.ms)
-        tMax = self.tstop
+        #[60,70,85,100]
+        amplitude = 60#*pq.pA #float(c['amplitude'])
+        duration = 520# *pq.ms#float(c['duration'])
+        delay = 100# *pq.ms#float(c['delay'])
+        #print(amplitude,duration,delay)
+        tMax = delay + duration #+ 200.0#*pq.ms
 
-	N = int(tMax/0.125)
-        
+        #self.set_stop_time(tMax*pq.ms)
+        tMax = self.tstop =520
+        N = int(tMax/0.125)
         Iext = np.zeros(N)
         delay_ind = int((delay/tMax)*N)
         duration_ind = int((duration/tMax)*N)
@@ -301,8 +304,8 @@ class IZHIModel():
             everything.pop('current_inj',None)
         #import pdb; pdb.set_trace()
         self.attrs['celltype'] = round(self.attrs['celltype'])
-        if np.bool_(self.attrs['celltype'] <= 3):   
-            everything.pop('celltype',None)         
+        if np.bool_(self.attrs['celltype'] <= 3):
+            everything.pop('celltype',None)
             v = get_vm_matlab_one_two_three(**everything)
         else:
 
@@ -316,13 +319,15 @@ class IZHIModel():
                 v = get_vm_matlab_six(**everything)
             if np.bool_(self.attrs['celltype'] == 7):
                 v = get_vm_matlab_seven(**everything)
-        
 
-        self.model.attrs.update(attrs)
+
+        self.attrs
 
         self.vM = AnalogSignal(v,
                             units=pq.mV,
                             sampling_period=0.125*pq.ms)
+        #print(np.std(v))
+        return self.vM
 
     def _backend_run(self):
         results = {}
@@ -338,4 +343,3 @@ class IZHIModel():
         results['t'] = self.vM.times
         results['run_number'] = results.get('run_number',0) + 1
         return results
-  
