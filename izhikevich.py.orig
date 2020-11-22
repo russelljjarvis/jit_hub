@@ -9,7 +9,7 @@ voltage_units = mV
 import copy
 from elephant.spike_train_generation import threshold_detection
 
-from numba import jit, autojit
+from numba import jit#, autojit
 import cython
 @jit(nopython=True)
 def get_vm_matlab_four(C=89.7960714285714,
@@ -235,7 +235,7 @@ class IZHIModel():
                 if self.attrs['celltype'] == 7:
                     #print('gets into multiple regimes',self.attrs['celltype'])
 
-                    v = get_vm_matlab_six(**everything)
+                    v = get_vm_matlab_seven(**everything)
 
             self.vM = AnalogSignal(v,
                                 units=pq.mV,
@@ -272,14 +272,24 @@ class IZHIModel():
             c = current
 
         #[60,70,85,100]
+<<<<<<< HEAD:izhi.py
         amplitude = 60#*pq.pA #float(c['amplitude'])
         duration = 520# *pq.ms#float(c['duration'])
         delay = 100# *pq.ms#float(c['delay'])
+=======
+        amplitude = float(c['amplitude'])
+        duration = float(c['duration'])
+        delay = float(c['delay'])
+>>>>>>> 85cf29e0ee7cd38ba21f10d8f0203a5f39a074db:izhikevich.py
         #print(amplitude,duration,delay)
         tMax = delay + duration #+ 200.0#*pq.ms
 
         #self.set_stop_time(tMax*pq.ms)
+<<<<<<< HEAD:izhi.py
         tMax = self.tstop =520
+=======
+        tMax = self.tstop = float(tMax)
+>>>>>>> 85cf29e0ee7cd38ba21f10d8f0203a5f39a074db:izhikevich.py
         N = int(tMax/0.125)
         Iext = np.zeros(N)
         delay_ind = int((delay/tMax)*N)
