@@ -375,16 +375,10 @@ class IZHIModel():
             attrs = self.default_attrs
 
         self.attrs = attrs
-        #if 'injected_square_current' in current.keys():
-        #    c = current['injected_square_current']
-        #else:
         if 'delay' in current.keys() and 'duration' in current.keys():
             square = True
             c = current
-            #print('square')
-
-        #[60,70,85,100]
-        amplitude = float(c['amplitude'])
+        amplitude = float(c['amplitude'].magnitude)
         duration = float(c['duration'])
         delay = float(c['delay'])
         #print(amplitude,duration,delay)
