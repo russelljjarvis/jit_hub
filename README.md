@@ -5,6 +5,6 @@ Note model waveforms are returned in Neo Format, converting between array to neo
 
 A slowly Expanding model Zoo. 
 
-# [TODO add MAT neuron models](https://github.com/melizalab/mat-neuron/blob/master/src/model.cpp#L83-L109)
-
+# [TODO 
+* add MAT neuron models
 * add Neo variable time step AnalogSignal
