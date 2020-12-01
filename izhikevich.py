@@ -16,7 +16,7 @@ def get_vm_matlab_four(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
-    tau = dt = 0.125
+    tau = dt = 0.25
     if ramp is not None:
         N = len(ramp)
     v = np.zeros(N)
@@ -48,7 +48,7 @@ def get_vm_matlab_five(C=89.7960714285714,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
 
-    tau= dt = 0.125; #dt
+    tau= dt = 0.25; #dt
     if ramp is not None:
         N = len(ramp)
     v = np.zeros(N)
@@ -67,7 +67,7 @@ def get_vm_matlab_five(C=89.7960714285714,
         if v[i+1] < d:
             u[i+1] = u[i] + tau*a*(0-u[i])
         else:
-            u[i+1] = u[i] + tau*a*((0.125*(v[i]-d)**3)-u[i])
+            u[i+1] = u[i] + tau*a*((0.025*(v[i]-d)**3)-u[i])
         if v[i+1]>=vPeak:
             v[i]=vPeak;
             v[i+1]=c;
@@ -80,7 +80,7 @@ def get_vm_matlab_seven(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
-    tau= dt = 0.125; #dt
+    tau= dt = 0.25; #dt
 
     if ramp is not None:
         N = len(ramp)
@@ -117,7 +117,7 @@ def get_vm_matlab_six(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
-    tau= dt = 0.125; #dt
+    tau= dt = 0.25; #dt
 
     if ramp is not None:
         N = len(ramp)
@@ -148,13 +148,13 @@ def get_vm_matlab_six(C=89.7960714285714,
 
 
 
-#@jit(nopython=True)
+@jit(nopython=True)
 def get_vm_matlab_one_two_three(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,
           N=0,start=0,stop=0,amp=0,ramp=None):
-    tau= dt = 0.125; #dt
+    tau= dt = 0.25; #dt
     if ramp is not None:
         N = len(ramp)
     v = np.zeros(N)
@@ -183,7 +183,7 @@ class IZHIModel():
 
     name = 'IZHI'
 
-    def __init__(self, attrs=None,DTC=None,
+    def __init__(self, attrs=None
                      debug = False):
         self.vM = None
         self.attrs = attrs
@@ -228,7 +228,8 @@ class IZHIModel():
                 everything.pop('current_inj',None)
             everything = copy.copy(self.attrs)
 
-            self.attrs['celltype'] = round(self.attrs['celltype'])
+            self.attrs['celltype'] = int(round(self.attrs['celltype']))
+            assert type(self.attrs['celltype']) is type(int())
             if self.attrs['celltype'] <= 3:
                 everything.pop('celltype',None)
                 v = get_vm_matlab_one_two_three(**everything)
@@ -240,19 +241,20 @@ class IZHIModel():
                 if self.attrs['celltype'] == 6:
                     v = get_vm_matlab_six(**everything)
                 if self.attrs['celltype'] == 7:
-                    #print('gets into multiple regimes',self.attrs['celltype'])
+
 
                     v = get_vm_matlab_seven(**everything)
 
             self.vM = AnalogSignal(v,
                                 units=pq.mV,
-                                sampling_period=0.125*pq.ms)
+                                sampling_period=0.25*pq.ms)
 
 
         return self.vM
 
     def set_attrs(self, attrs):
         self.attrs = attrs
+
 
 
 
@@ -291,12 +293,12 @@ class IZHIModel():
         Generate the waveform for a current which is initially constant
         and then increases linearly with time.
         Arguments:
-	gradient - gradient of the ramp
-	onset - time at which the ramp begins
-	t_stop - total duration of the waveform
-	baseline - current value before the ramp
-	time_step - interval between increments in the ramp current
-	t_start - time at which the waveform begins (used to construct waveforms
+        gradient - gradient of the ramp
+        onset - time at which the ramp begins
+        t_stop - total duration of the waveform
+        baseline - current value before the ramp
+        time_step - interval between increments in the ramp current
+        t_start - time at which the waveform begins (used to construct waveforms
 	          containing multiple ramps).
         """
         if onset > t_start:
@@ -378,9 +380,14 @@ class IZHIModel():
         if 'delay' in current.keys() and 'duration' in current.keys():
             square = True
             c = current
-        amplitude = float(c['amplitude'].magnitude)
-        duration = float(c['duration'])
-        delay = float(c['delay'])
+        if isinstance(c['amplitude'],type(pq)):
+            amplitude = float(c['amplitude'].simplified)
+            duration = float(c['duration'].simplified)
+            delay = float(c['delay'].simplified)
+        else:
+            amplitude = float(c['amplitude'])
+            duration = float(c['duration'])
+            delay = float(c['delay'])
         #print(amplitude,duration,delay)
         tMax = delay + duration #+ 200.0#*pq.ms
 
@@ -409,12 +416,14 @@ class IZHIModel():
         if 'current_inj' in everything.keys():
             everything.pop('current_inj',None)
         #import pdb; pdb.set_trace()
-        self.attrs['celltype'] = round(self.attrs['celltype'])
+
+        self.attrs['celltype'] = int(round(self.attrs['celltype']))
+        assert type(self.attrs['celltype']) is type(int())
+
         if np.bool_(self.attrs['celltype'] <= 3):
             everything.pop('celltype',None)
             v = get_vm_matlab_one_two_three(**everything)
         else:
-
 
 
             if np.bool_(self.attrs['celltype'] == 4):
@@ -431,8 +440,8 @@ class IZHIModel():
 
         self.vM = AnalogSignal(v,
                             units=pq.mV,
-                            sampling_period=0.125*pq.ms)
-        #print(np.std(v))
+                            sampling_period=0.25*pq.ms)
+
         return self.vM
 
     def _backend_run(self):
@@ -444,7 +453,7 @@ class IZHIModel():
 
         self.vM = AnalogSignal(v,
                                units = voltage_units,
-                               sampling_period = 0.01*pq.ms)
+                               sampling_period = 0.25*pq.ms)
         results['vm'] = self.vM.magnitude
         results['t'] = self.vM.times
         results['run_number'] = results.get('run_number',0) + 1

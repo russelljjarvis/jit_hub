@@ -2,3 +2,4 @@ numba
 neo
 numpy
 scipy
+sciunit
