@@ -12,7 +12,7 @@ from elephant.spike_train_generation import threshold_detection
 from numba import jit#, autojit
 import cython
 @jit(nopython=True)
-def get_vm_matlab_four(C=89.7960714285714,
+def get_vm_four(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
@@ -23,7 +23,7 @@ def get_vm_matlab_four(C=89.7960714285714,
     u = np.zeros(N)
     v[0] = vr
     for i in range(N-1):
-        I = 0	
+        I = 0
         if ramp is not None:
             I = ramp[i]
         elif start <= i <= stop:
@@ -43,10 +43,11 @@ def get_vm_matlab_four(C=89.7960714285714,
     return v
 
 @jit(nopython=True)
-def get_vm_matlab_five(C=89.7960714285714,
+def get_vm_five(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
-          vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
+          vr=-65.2261863636364, vt=-50,celltype=1,
+		  N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
 
     tau= dt = 0.25; #dt
     if ramp is not None:
@@ -55,7 +56,7 @@ def get_vm_matlab_five(C=89.7960714285714,
     u = np.zeros(N)
     v[0] = vr
     for i in range(N-1):
-        I = 0	
+        I = 0
         if ramp is not None:
             I = ramp[i]
         elif start <= i <= stop:
@@ -75,11 +76,13 @@ def get_vm_matlab_five(C=89.7960714285714,
     return v
 
 
+
 @jit(nopython=True)
-def get_vm_matlab_seven(C=89.7960714285714,
+def get_vm_six(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
-          vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
+          vr=-65.2261863636364, vt=-50,celltype=1,
+		  N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
     tau= dt = 0.25; #dt
 
     if ramp is not None:
@@ -88,7 +91,42 @@ def get_vm_matlab_seven(C=89.7960714285714,
     u = np.zeros(N)
     v[0] = vr
     for i in range(N-1):
-        I = 0	
+        I = 0
+        if ramp is not None:
+            I = ramp[i]
+        elif start <= i <= stop:
+            I = amp
+       # forward Euler method
+        v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I) / C
+
+
+        u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]);
+        if v[i+1] > -65:
+            b=0;
+        else:
+            b=15;
+        if v[i+1] > (vPeak + 0.1*u[i+1]):
+            v[i]= vPeak + 0.1*u[i+1];
+            v[i+1] = c-0.1*u[i+1]; # Reset voltage
+            u[i+1]=u[i+1]+d;
+
+    return v
+
+@jit(nopython=True)
+def get_vm_seven(C=89.7960714285714,
+         a=0.01, b=15, c=-60, d=10, k=1.6,
+         vPeak=(86.364525297619-65.2261863636364),
+          vr=-65.2261863636364, vt=-50,celltype=1,
+		  N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
+    tau= dt = 0.25; #dt
+
+    if ramp is not None:
+        N = len(ramp)
+    v = np.zeros(N)
+    u = np.zeros(N)
+    v[0] = vr
+    for i in range(N-1):
+        I = 0
         if ramp is not None:
             I = ramp[i]
         elif start <= i <= stop:
@@ -112,60 +150,30 @@ def get_vm_matlab_seven(C=89.7960714285714,
 
     return v
 
-@jit(nopython=True)
-def get_vm_matlab_six(C=89.7960714285714,
-         a=0.01, b=15, c=-60, d=10, k=1.6,
-         vPeak=(86.364525297619-65.2261863636364),
-          vr=-65.2261863636364, vt=-50,celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
-    tau= dt = 0.25; #dt
-
-    if ramp is not None:
-        N = len(ramp)
-    v = np.zeros(N)
-    u = np.zeros(N)
-    v[0] = vr
-    for i in range(N-1):
-        I = 0	
-        if ramp is not None:
-            I = ramp[i]
-        elif start <= i <= stop:
-            I = amp
-       # forward Euler method
-        v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I) / C
-
-
-        u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]);
-        if v[i+1] > -65:
-            b=0;
-        else:
-            b=15;
-        if v[i+1] > (vPeak + 0.1*u[i+1]):
-            v[i]= vPeak + 0.1*u[i+1];
-            v[i+1] = c-0.1*u[i+1]; # Reset voltage
-            u[i+1]=u[i+1]+d;
-
-    return v
-
-
 
 @jit(nopython=True)
-def get_vm_matlab_one_two_three(C=89.7960714285714,
+def get_vm_one_two_three(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
          vPeak=(86.364525297619-65.2261863636364),
           vr=-65.2261863636364, vt=-50,
-          N=0,start=0,stop=0,amp=0,ramp=None):
+          N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
     tau= dt = 0.25; #dt
     if ramp is not None:
         N = len(ramp)
+    if pulse is not None:
+        N = len(pulse)
     v = np.zeros(N)
     u = np.zeros(N)
     v[0] = vr
     for i in range(N-1):
-        I = 0	
+        I = 0
         if ramp is not None:
             I = ramp[i]
-        elif start <= i <= stop:
-            I = amp
+        if pulse is not None:
+            I = ramp[i]
+        if ramp is None and pulse is None:
+	        if start <= i <= stop:
+	            I = amp
        # forward Euler method
         v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I) / C
         u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
@@ -183,8 +191,7 @@ class IZHIModel():
 
     name = 'IZHI'
 
-    def __init__(self, attrs=None
-                     debug = False):
+    def __init__(self, attrs=None):
         self.vM = None
         self.attrs = attrs
         self.temp_attrs = None
@@ -232,18 +239,18 @@ class IZHIModel():
             assert type(self.attrs['celltype']) is type(int())
             if self.attrs['celltype'] <= 3:
                 everything.pop('celltype',None)
-                v = get_vm_matlab_one_two_three(**everything)
+                v = get_vm_one_two_three(**everything)
             else:
                 if self.attrs['celltype'] == 4:
-                    v = get_vm_matlab_four(**everything)
+                    v = get_vm_four(**everything)
                 if self.attrs['celltype'] == 5:
-                    v = get_vm_matlab_five(**everything)
+                    v = get_vm_five(**everything)
                 if self.attrs['celltype'] == 6:
-                    v = get_vm_matlab_six(**everything)
+                    v = get_vm_six(**everything)
                 if self.attrs['celltype'] == 7:
 
 
-                    v = get_vm_matlab_seven(**everything)
+                    v = get_vm_seven(**everything)
 
             self.vM = AnalogSignal(v,
                                 units=pq.mV,
@@ -258,7 +265,7 @@ class IZHIModel():
 
 
 
-    def step(amplitude, t_stop):
+    def step(self,amplitude, t_stop):
        """
        Generate the waveform for a current that starts at zero and is stepped up
        to the given amplitude at time t_stop/10.
@@ -268,15 +275,15 @@ class IZHIModel():
        return times, amps
 
 
-    def pulse(amplitude, onsets, width, t_stop, baseline=0.0):
+    def pulse(self,amplitude, onsets, width, t_stop, baseline=0.0):
         """
         Generate the waveform for a series of current pulses.
         Arguments:
-	amplitude - absolute current value during each pulse
-	onsets - a list or array of times at which pulses begin
-	width - duration of each pulse
-	t_stop - total duration of the waveform
-	baseline - the current value before, between and after pulses.
+		amplitude - absolute current value during each pulse
+		onsets - a list or array of times at which pulses begin
+		width - duration of each pulse
+		t_stop - total duration of the waveform
+		baseline - the current value before, between and after pulses.
         """
         times = [0]
         amps = [baseline]
@@ -288,7 +295,7 @@ class IZHIModel():
         return np.array(times), np.array(amps)
 
 
-    def ramp(self,gradient, onset, t_stop, baseline=0.0, time_step=0.125, t_start=0.0):
+    def ramp(self,gradient, onset, t_stop, baseline=0.0, time_step=0.25, t_start=0.0):
         """
         Generate the waveform for a current which is initially constant
         and then increases linearly with time.
@@ -311,9 +318,9 @@ class IZHIModel():
 
     def inject_ramp_current(self, t_stop, gradient=0.000015, onset=30.0, baseline=0.0, t_start=0.0):
         times, amps = self.ramp(gradient, onset, t_stop, baseline=0.0, t_start=0.0)
- 
+
         everything = copy.copy(self.attrs)
-        
+
         everything.update({'ramp':amps})
         everything.update({'start':onset})
         everything.update({'stop':t_stop})
@@ -324,28 +331,28 @@ class IZHIModel():
         self.attrs['celltype'] = round(self.attrs['celltype'])
         if np.bool_(self.attrs['celltype'] <= 3):
             everything.pop('celltype',None)
-            v = get_vm_matlab_one_two_three(**everything)
+            v = get_vm_one_two_three(**everything)
         else:
 
 
 
             if np.bool_(self.attrs['celltype'] == 4):
-                v = get_vm_matlab_four(**everything)
+                v = get_vm_four(**everything)
             if np.bool_(self.attrs['celltype'] == 5):
-                v = get_vm_matlab_five(**everything)
+                v = get_vm_five(**everything)
             if np.bool_(self.attrs['celltype'] == 6):
-                v = get_vm_matlab_six(**everything)
+                v = get_vm_six(**everything)
             if np.bool_(self.attrs['celltype'] == 7):
-                v = get_vm_matlab_seven(**everything)
+                v = get_vm_seven(**everything)
 
 
         self.attrs
 
         self.vM = AnalogSignal(v,
                             units=pq.mV,
-                            sampling_period=0.125*pq.ms)
+                            sampling_period=0.25*pq.ms)
 
-        return self.vM	
+        return self.vM
 
     def stepify(times, values):
         """
@@ -382,8 +389,9 @@ class IZHIModel():
             c = current
         if isinstance(c['amplitude'],type(pq)):
             amplitude = float(c['amplitude'].simplified)
-            duration = float(c['duration'].simplified)
-            delay = float(c['delay'].simplified)
+            print(c['amplitude'],c['amplitude'].simplified)
+            duration = float(c['duration'])#.simplified)
+            delay = float(c['delay'])#.simplified)
         else:
             amplitude = float(c['amplitude'])
             duration = float(c['duration'])
@@ -393,7 +401,7 @@ class IZHIModel():
 
         #self.set_stop_time(tMax*pq.ms)
         tMax = self.tstop = float(tMax)
-        N = int(tMax/0.125)
+        N = int(tMax/0.25)
         Iext = np.zeros(N)
         delay_ind = int((delay/tMax)*N)
         duration_ind = int((duration/tMax)*N)
@@ -422,18 +430,18 @@ class IZHIModel():
 
         if np.bool_(self.attrs['celltype'] <= 3):
             everything.pop('celltype',None)
-            v = get_vm_matlab_one_two_three(**everything)
+            v = get_vm_one_two_three(**everything)
         else:
 
 
             if np.bool_(self.attrs['celltype'] == 4):
-                v = get_vm_matlab_four(**everything)
+                v = get_vm_four(**everything)
             if np.bool_(self.attrs['celltype'] == 5):
-                v = get_vm_matlab_five(**everything)
+                v = get_vm_five(**everything)
             if np.bool_(self.attrs['celltype'] == 6):
-                v = get_vm_matlab_six(**everything)
+                v = get_vm_six(**everything)
             if np.bool_(self.attrs['celltype'] == 7):
-                v = get_vm_matlab_seven(**everything)
+                v = get_vm_seven(**everything)
 
 
         self.attrs
