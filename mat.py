@@ -188,8 +188,8 @@ class MATModel():
         a1, a2, b, w, R, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
         dt = 1.0
         #params = [a1, a2, b, w, R, tm, t1, t2, tv, tref]
-        #Aexp = self.impulse_matrix_direct()
-        Aexp = self.impulse_matrix(reduced=False)
+        Aexp = self.impulse_matrix_direct()
+        #Aexp = self.impulse_matrix(reduced=False)
         #state: 5-element sequence (V, θ1, θ2, θV, ddθV)
         #state: 5-element sequence (V, θ1, θ2, θV, ddθV)
 
