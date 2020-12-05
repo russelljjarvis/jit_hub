@@ -11,6 +11,16 @@ from elephant.spike_train_generation import threshold_detection
 
 from numba import jit#, autojit
 import cython
+import time
+def timer(func):
+    def inner(*args, **kwargs):
+        t1 = time.time()
+        f = func(*args, **kwargs)
+        t2 = time.time()
+        print('time taken on block {0} '.format(t2-t1))
+        return f
+    return inner
+
 @jit(nopython=True)
 def get_vm_four(C=89.7960714285714,
          a=0.01, b=15, c=-60, d=10, k=1.6,
@@ -184,6 +194,60 @@ def get_vm_one_two_three(C=89.7960714285714,
             v[i+1]=c
             u[i+1]=u[i+1]+d  # reset u, except for FS cells
     return v
+#@timer
+
+@jit(nopython=True)
+def get_old_vm_known_i(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
+    u=b*vr
+    V = vr
+    tau = dt = 0.25#times[1]-times[0]#0.25; #dt
+    N = len(I)
+    vv = np.zeros(N)
+    #v[0] = -70
+    UU = np.zeros(N)
+    #u[0] = b*-70
+
+
+    for i in range(N):
+	    #V = V + tau*(0.04*V^2+5*V+140-u+I);
+	    #u = u + tau*a*(b*V-u);
+        V = V + tau*(0.04*V**2+5*V+140-u+I[i]);
+        u = u + tau*a*(b*V-u);
+        # if V > 30
+        #v[i] = v[i] + tau*(0.04*v[i]**2.0+5.0*v[i]+140.0-u[i]+I[i]);
+        #print(v[i+1])
+        #u[i] = u[i] + tau*a*(b*v[i]-u[i]);
+        if V > 30:
+            vv[i] = 30;
+            V = c;
+            u = u + d;
+            #v[i] = c;
+            #u[i] = u[i] + d;
+        else:
+	        vv[i]=V;
+        UU[i]=u;
+    return vv
+
+@jit(nopython=True)
+def get_vm_known_i(I,times,C=89.7960714285714,
+         a=0.01, b=15, c=-60, d=10, k=1.6,
+         vPeak=(86.364525297619-65.2261863636364),
+          vr=-65.2261863636364, vt=-50,
+          ):
+    tau= dt = 0.25#times[1]-times[0]#0.25; #dt
+    N = len(I)
+    v = np.zeros(N)
+    u = np.zeros(N)
+    v[0] = vr
+    for i in range(N-1):
+        v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
+        u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
+
+        if v[i+1]>=vPeak:
+            v[i]=vPeak
+            v[i+1]=c
+            u[i+1]=u[i+1]+d  # reset u, except for FS cells
+    return v
 
 
 
@@ -209,7 +273,6 @@ class IZHIModel():
     def get_spike_count(self):
         thresh = threshold_detection(self.vM,0*qt.mV)
         return len(thresh)
-
 
     def set_stop_time(self, stop_time = 650*pq.ms):
         """Sets the simulation duration
@@ -354,7 +417,27 @@ class IZHIModel():
 
         return self.vM
 
-    def stepify(times, values):
+    def wrap_known_i(self,i,times):
+        everything = self.attrs
+        if 'current_inj' in everything.keys():
+            everything.pop('current_inj',None)
+        if 'celltype' in everything.keys():
+            everything.pop('celltype',None)
+        #print(i)
+        #if len(i)<10:
+        #    times, i = self.stepify(times, i)
+        #    print(len(i),'bigger?')
+        reduced = {'a':everything['a'],'b':everything['b'],'c':everything['c'],'d':everything['d'],'vr':everything['v_init']}
+        v = AnalogSignal(get_old_vm_known_i(i,times,**reduced),units=pq.mV,sampling_period=0.25*pq.ms)
+        #v = AnalogSignal(get_vm_known_i(i,times,**everything),units=pq.mV,sampling_period=(times[1]-times[0])*pq.ms)
+        thresh = threshold_detection(v,0*pq.mV)
+        print(len(thresh),'spikes',v.times[-1])
+        return v
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    #@jit
+    def stepify(self,times, values):
         """
         Generate an explicitly-stepped version of a time series.
         """
@@ -364,6 +447,7 @@ class IZHIModel():
         new_times[1::2] = times[1:]
         new_values[::2] = values
         new_values[1::2] = values[:-1]
+        #print(len(new_values))
         return new_times, new_values
 
 
