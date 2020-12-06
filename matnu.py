@@ -67,19 +67,29 @@ class MATModel():
 
     def set_attrs(self, attrs):
         self.attrs = attrs
+
+    #self.default_attrs = {'vr':-65.0,'vt':-55.0,'a1':10, 'a2':2, 'b':0, 'w':5,
+    # 'R':10, 'tm':10, 't1':10,
+    # 't2':200, 'tv':5, 'tref':2}
+
     #@jit
-    #@timer
-    def impulse_matrix_direct(self):
+    def impulse_matrix_direct(self,a1=10.0, a2=2.0, b=0, w=5,
+                               tm=10,t1=10, t2=200, tv=5, tref=2,R=10):
 
         Aexp = np.zeros((6, 6), dtype='d')
-        a1, a2, b, w, R, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
+        #a1, a2, b, w, _, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
         Aexp[0, 0] = exp(-dt / tm)
         Aexp[0, 1] = tm - tm * exp(-dt / tm)
-        Aexp[1, 1] = 1
+        Aexp[1, 1] = 1.
         Aexp[2, 2] = exp(-dt / t1)
         Aexp[3, 3] = exp(-dt / t2)
-        Aexp[4, 0] = b*tv*(dt*tm*exp(dt/tm) - dt*tv*exp(dt/tm) + tm*tv*exp(dt/tm) - tm*tv*exp(dt/tv))*exp(-dt/tv - dt/tm)/(pow(tm, 2) - 2*tm*tv + pow(tv, 2))
-        Aexp[4, 1] = b*tm*tv*(-dt*(tm - tv)*exp(dt*(tm + tv)/(tm*tv)) + tm*tv*exp(2*dt/tv) - tm*tv*exp(dt*(tm + tv)/(tm*tv)))*exp(-dt*(2*tm + tv)/(tm*tv))/pow(tm - tv, 2)
+        Aexp[4, 0] = b*tv*(dt*tm*exp(dt/tm) - dt*tv*exp(dt/tm) + \
+                                              tm*tv*exp(dt/tm) - \
+                                              tm*tv*exp(dt/tv))*exp(-dt/tv - dt/tm)/(pow(tm, 2) - \
+                                              2*tm*tv + pow(tv, 2))
+        Aexp[4, 1] = b*tm*tv*(-dt*(tm - tv)*exp(dt*(tm + tv)/(tm*tv)) + \
+                     tm*tv*exp(2*dt/tv) - \
+                     tm*tv*exp(dt*(tm + tv)/(tm*tv)))*exp(-dt*(2*tm + tv)/(tm*tv))/pow(tm - tv, 2)
         Aexp[4, 4] = exp(-dt / tv)
         Aexp[4, 5] = dt * exp(-dt / tv)
         Aexp[5, 0] = b*tv*exp(-dt/tv)/(tm - tv) - b*tv*exp(-dt/tm)/(tm - tv)
@@ -88,23 +98,26 @@ class MATModel():
         return Aexp
 
     #@jit
-    #@timer
-    def impulse_matrix(self, reduced=False):
+    @timer
+    def impulse_matrix(self,a1=10.0, a2=2.0, b=0.0, w=5.0,
+                               tm=10.0,t1=10.0, t2=200.0, tv=5.0, tref=2.0,R=10.0,dt = 1.0):
         """Calculate the matrix exponential for integration of MAT model"""
-        _, _, b, w, _, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
-        dt = 1
-        if not reduced:
-            A = - np.matrix([[1 / tm, -1, 0, 0, 0, 0],
-                             [0, 0, 0, 0, 0, 0],
-                             [0, 0, 1 / t1, 0, 0, 0],
-                             [0, 0, 0, 1 / t2, 0, 0],
-                             [0, 0, 0, 0, 1 / tv, -1],
-                             [b / tm, -b, 0, 0, 0, 1 / tv]])
+        #_, _, b, w, _, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
+
+        #if not reduced:
+        A = - np.matrix([[1.0 / tm, -1., 0., 0., 0., 0.],
+                         [0., 0., 0., 0., 0., 0.],
+                         [0., 0., 1. / t1, 0., 0., 0.],
+                         [0., 0., 0., 1. / t2, 0., 0.],
+                         [0., 0., 0., 0., 1. / tv, -1.],
+                         [b / tm, -b, 0., 0., 0., 1. / tv]])
+        '''
         else:
          	A = - np.matrix([[1 / tm, -1, 0, 0],
                              [0,       0, 0, 0],
                              [0, 0, 1 / tv, -1],
                              [b / tm, -b, 0, 1 / tv]])
+        '''
         return linalg.expm(A * dt)
 
     @jit
@@ -134,7 +147,8 @@ class MATModel():
         iref = 0
         last_I = 0
         for i in range(N):
-            y = np.dot(Aexp, y)
+            y = -65+np.dot(Aexp, y)
+            print(y)
             y[1] += R / tm * (current[i] - last_I)
             last_I = current[i]
             # check for spike
@@ -144,10 +158,12 @@ class MATModel():
                 y[3] += a2
                 iref = i + int(tref * dt)
                 spikes.append(i * dt)
-            Y[i] = y
+            #Y[i] = y
+            Y[i] = (y-3.0)/30.0
+
         self.state = y
         self.vM = AnalogSignal(Y,
-                units=pq.mV,
+                units=pq.V,
                 sampling_period=1*pq.ms)
         return self.vM, spikes
 
@@ -168,7 +184,6 @@ class MATModel():
             c = current
         if isinstance(c['amplitude'],type(pq)):
             amplitude = float(c['amplitude'].simplified)
-            print(c['amplitude'],c['amplitude'].simplified)
             duration = float(c['duration'])#.simplified)
             delay = float(c['delay'])#.simplified)
         else:
@@ -185,10 +200,19 @@ class MATModel():
         current[delay_ind:delay_ind+duration_ind-1] = amplitude
         current[delay_ind+duration_ind::] = 0.0
         D = 6
-        a1, a2, b, w, R, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
+        #a1, a2, b, w, R, tm, t1, t2, tv, tref = self.attrs['a1'],self.attrs['a2'],self.attrs['b'],self.attrs['w'], self.attrs['R'], self.attrs['tm'], self.attrs['t1'], self.attrs['t2'], self.attrs['tv'], self.attrs['tref']
         dt = 1.0
         #params = [a1, a2, b, w, R, tm, t1, t2, tv, tref]
-        Aexp = self.impulse_matrix_direct()
+        Aexp = self.impulse_matrix(a1=self.attrs['a1'],
+                                          a2=self.attrs['a2'],
+                                          b=self.attrs['b'],
+                                          w=self.attrs['w'],
+                                          tm=self.attrs['tm'],
+                                          t1=self.attrs['t1'],
+                                          t2=self.attrs['t2'],
+                                          tv=self.attrs['tv'],
+                                          tref=self.attrs['tref'],
+                                          R=self.attrs['R'])
         #Aexp = self.impulse_matrix(reduced=False)
         #state: 5-element sequence (V, θ1, θ2, θV, ddθV)
         #state: 5-element sequence (V, θ1, θ2, θV, ddθV)
@@ -228,7 +252,10 @@ class MATModel():
         vm = np.zeros(N, dtype='d')
 
         for i in range(N):
+            #y = np.dot(Aexp, y)
             y = np.dot(Aexp, y)
+            #print(y)
+
             y[1] += R / tm * (current[i] - last_I)
             last_I = current[i]
             # check for spike
@@ -238,14 +265,19 @@ class MATModel():
                 y[3] += a2
                 iref = i + int(tref * dt)
                 spikes.append(i * dt)
-            Y[i] = y
-            vm[i] = y[0]
+            Y[i] = (y-3.0)/30.0
+            #vm[i] = y[0]
 
         self.state = y
         self.spikes = spikes
+
         self.vM = AnalogSignal([np.sum(y) for y in Y],
-                            units=pq.mV,
+                            units=pq.V,
                             sampling_period=1*pq.ms)
+
+        #self.vM = AnalogSignal([0.005*(np.sum(y))-0.07 for y in Y],
+        #                    units=pq.V,
+        #                    sampling_period=1*pq.ms)
         #print(len(spikes))
         #(V, I, θV, ddθV)
         return self.vM
