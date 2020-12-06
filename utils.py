@@ -12,7 +12,7 @@ from numba import jit
 from tqdm.auto import tqdm
 import time
 import numba
-
+import collections
 global_time_step = 0.25
 
 plt.rcParams.update({
@@ -51,6 +51,24 @@ for index,key in enumerate(reduced_cells.keys()):
         reduced_cells[key][k] = v[index]
 
 
+def transform_input(T,IinRange,Iin0,burstMode=True):
+    tau=0.25; #%dt
+    index = 0;
+    list_currents=[]
+    for Iinput in IinRange:
+        index = index + 1; #% subplot index
+        n=int(np.round(T/tau)); #% number of samples
+
+        if burstMode:
+            n0 = int(120/tau); #% initial period of 120 ms to lower Vrmp to -80mV
+            I=list(Iin0*np.ones(n0)[:])
+            Ipart=list(Iinput*np.ones(n)[:])
+            I.extend(Ipart);#% 2 different pulses of input DC current
+            n = n+n0;
+        else:
+            I=list(Iinput*np.ones(n));#% pulse of input DC current
+        list_currents.append(I)
+    return list_currents
 
 
 def run_simulation(time_step=global_time_step, a=0.02, b=0.2, c=-65.0, d=6.0,
