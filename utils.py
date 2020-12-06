@@ -24,6 +24,35 @@ plt.rcParams.update({
 })
 
 
+# https://www.izhikevich.org/publications/spikes.htm
+type2007 = collections.OrderedDict([
+  #              C    k     vr  vt vpeak   a      b   c    d  celltype
+  ('RS',        (100, 0.7,  -60, -40, 35, 0.03,   -2, -50,  100,  1)),
+  ('IB',        (150, 1.2,  -75, -45, 50, 0.01,   5, -56,  130,   2)),
+  ('TC',        (200, 1.6,  -60, -50, 35, 0.01,  15, -60,   10,   6)),
+  ('LTS',       (100, 1.0,  -56, -42, 40, 0.03,   8, -53,   20,   4)),
+  ('RTN',       (40,  0.25, -65, -45, 0,  0.015, 10, -55,  50,    7)),
+  ('FS',        (20,  1,    -55, -40, 25, 0.2,   -2, -45,  -55,   5)),
+  ('CH',        (50,  1.5,  -60, -40, 25, 0.03,   1, -40,  150,   3))])
+
+#    reduced_cells['TC']['a'] = 0.01
+
+
+trans_dict = collections.OrderedDict([(k,[]) for k in ['C','k','vr','vt','vPeak','a','b','c','d','celltype']])
+for i,k in enumerate(trans_dict.keys()):
+    for v in type2007.values():
+        trans_dict[k].append(v[i])
+
+
+reduced_cells = collections.OrderedDict([(k,[]) for k in ['RS','IB','TC','LTS','RTN','FS','CH']])
+for index,key in enumerate(reduced_cells.keys()):
+    reduced_cells[key] = {}
+    for k,v in trans_dict.items():
+        reduced_cells[key][k] = v[index]
+
+
+
+
 def run_simulation(time_step=global_time_step, a=0.02, b=0.2, c=-65.0, d=6.0,
                    C=100, k=0.7, vr=-60, vt=-40, vpeak=35,
                    u_init=None, v_init=-70.0, waveform=None, t_stop=100.0,
@@ -59,14 +88,24 @@ def run_simulation(time_step=global_time_step, a=0.02, b=0.2, c=-65.0, d=6.0,
     #cell_type = sim.Izhikevich(a=a, b=b, c=c, d=d, i_offset=0.0)
     #attrs = {}
     model = izhi.IZHIModel()
-    attrs = model.default_attrs
-    attrs['v_init'] = v_init
+    #attrs = model.default_attrs
+    #attrs['v_init'] = v_init
     attrs['a'] = a
     attrs['b'] = b
     attrs['c'] = c
     attrs['d'] = d
+    attrs['k'] = k
+    attrs['C'] = C
+    attrs['vr'] = vr
+    attrs['vt'] = vt
+    attrs['vpeak'] = v_init
+
+    #a=0.02, b=0.2, c=-65.0, d=6.0,
+    #                   C=100, k=0.7, vr=-60, vt=-40, vpeak=35,
+    #                   u_init=None, v_init=-70.0,
     #attrs['celltype'] = 1
     #attrs['u_init'] = u
+    model.attrs = {}
     model.attrs.update(attrs)
     #neuron = sim.create(cell_type)
     #neuron.initialize(**initialValues)
@@ -245,13 +284,7 @@ def stepify(times, values):
     new_values[1::2] = values[:-1]
     return new_times, new_values
 
-
-# == Get command-line options, import simulator backend =====================
-
-
-
-# == Initialize figure ======================================================
-
+'''
 j = 0
 plt.ion()
 fig = plt.figure(1, facecolor='white', figsize=(6, 6))
@@ -367,15 +400,14 @@ run_simulation(a=0.01, b=0.2, c=-65.0, d=8.0, v_init=-70.0,
 
 # == Sub-plot G: Class 1 excitable ==========================================
 
-'''
-Note: This simulation is supposed to use a different parameterization of the
-      model, i.e.
-            V' = tau*(0.04*V^2 + 4.1*V + 108 -u + I)
-      as opposed to
-            V' = tau*(0.04*V^2 + 5*V + 140 - u + I)
-The alternative parameterization is not currently available in PyNN, therefore
-the results of this simulation are not expected to match the original figure.
-'''
+
+#Note: This simulation is supposed to use a different parameterization of the
+#      model, i.e.
+#            V' = tau*(0.04*V^2 + 4.1*V + 108 -u + I)
+#      as opposed to
+#            V' = tau*(0.04*V^2 + 5*V + 140 - u + I)
+#The alternative parameterization is not currently available in PyNN, therefore
+#the results of this simulation are not expected to match the original figure.
 pbar.update(1)
 
 t_stop = 300.0
@@ -426,15 +458,14 @@ run_simulation(a=0.1, b=0.26, c=-60.0, d=-1.0, v_init=-62.0,
 # == Sub-plot L: Integrator =================================================
 pbar.update(1)
 
-'''
-Note: This simulation is supposed to use a different parameterization of the
-      model, i.e.
-            V' = tau*(0.04*V^2 + 4.1*V + 108 -u + I)
-      as opposed to
-            V' = tau*(0.04*V^2 + 5*V + 140 - u + I)
-The alternative parameterization is not currently available in PyNN, therefore
-the results of this simulation are not expected to match the original figure.
-'''
+
+#Note: This simulation is supposed to use a different parameterization of the
+#      model, i.e.
+#            V' = tau*(0.04*V^2 + 4.1*V + 108 -u + I)
+#      as opposed to
+#            V' = tau*(0.04*V^2 + 5*V + 140 - u + I)
+#The alternative parameterization is not currently available in PyNN, therefore
+#the results of this simulation are not expected to match the original figure.
 
 t_stop = 100.0
 T1 = t_stop / 11
@@ -496,15 +527,14 @@ pbar.update(1)
 
 # == Sub-plot R: Accomodation ===============================================
 
-'''
-Note: This simulation is supposed to use a different parameterization of the
-      model, i.e.
-            u' = tau*a*(b*(V + 65))
-      as opposed to
-            u' = tau*a*(b*V - u)
-The alternative parameterization is not currently available in PyNN, therefore
-the results of this simulation are not expected to match the original figure.
-'''
+#Note: This simulation is supposed to use a different parameterization of the
+#      model, i.e.
+#            u' = tau*a*(b*(V + 65))
+#      as opposed to
+#            u' = tau*a*(b*V - u)
+#The alternative parameterization is not currently available in PyNN, therefore
+#the results of this simulation are not expected to match the original figure.
+
 
 t_stop = 400.0
 
@@ -532,9 +562,8 @@ pbar.update(1)
 
 # == Sub-plot T: Inhibition-induced bursting ================================
 
-'''
-Modifying parameter d from -2.0 to -0.7 in order to reproduce Fig. 1
-'''
+#Modifying parameter d from -2.0 to -0.7 in order to reproduce Fig. 1
+
 
 t_stop = 350.0
 run_simulation(a=-0.026, b=-1.0, c=-45.0, d=-0.7, v_init=-63.8,
@@ -553,3 +582,4 @@ filename = "results_izhikevich2004.png"#normalized_filename()
 fig.savefig("results_izhikevich2004.png")
 
 print("\n  Simulation complete. Results can be seen in figure at %s\n"%(filename))
+'''
