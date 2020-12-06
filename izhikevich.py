@@ -30,20 +30,11 @@ def get_vm_four(C=89.7960714285714,
 	tau = dt = 0.25
 	N = len(I)
 
-	v = np.zeros(N)
+	v = vr*np.ones(N)
 	u = np.zeros(N)
 
 	v[0] = vr
 	for i in range(N-1):
-		'''
-		if ramp is not None:
-			N = len(ramp)
-		I = 0
-		if ramp is not None:
-			I = ramp[i]
-		elif start <= i <= stop:
-			I = amp
-		'''
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
@@ -66,20 +57,10 @@ def get_vm_five(C=89.7960714285714,
 	N = len(I)
 
 	tau= dt = 0.25; #dt
-	v = np.zeros(N)
+	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
 	for i in range(N-1):
-		'''
-		I = 0
-
-		if ramp is not None:
-			I = ramp[i]
-		elif start <= i <= stop:
-			I = amp
-		if ramp is not None:
-			N = len(ramp)
-		'''
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 
@@ -102,25 +83,14 @@ def get_vm_five(C=89.7960714285714,
 def get_vm_six(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=[]):#celltype=1,
-		  #N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
+		  vr=-65.2261863636364, vt=-50,I=np.array()):
 	tau= dt = 0.25; #dt
 	N = len(I)
 
-	v = np.zeros(N)
+	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
 	for i in range(N-1):
-		'''
-		I = 0
-		if ramp is not None:
-			I = ramp[i]
-		elif start <= i <= stop:
-			I = amp
-
-		if ramp is not None:
-			N = len(ramp)
-		'''
 	   # forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 
@@ -130,16 +100,11 @@ def get_vm_six(C=89.7960714285714,
 		else:
 			b=15;
 		u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]);
-        # u(i+1)=u(i)+tau*a*(b*(v(i)-vr)-u(i));
 
 		if v[i+1] > (vPeak + 0.1*u[i+1]):
 			v[i]= vPeak + 0.1*u[i+1];
 			v[i+1] = c-0.1*u[i+1]; # Reset voltage
 			u[i+1]=u[i+1]+d;
-        #if v(i+1) > (vpeak + 0.1*u(i+1))
-        #    v(i)=vpeak + 0.1*u(i+1);
-        #    v(i+1) = c-0.1*u(i+1); % Reset voltage
-        #    u(i+1)=u(i+1)+d;
 
 	return v
 
@@ -147,23 +112,13 @@ def get_vm_six(C=89.7960714285714,
 def get_vm_seven(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=[]):
+		  vr=-65.2261863636364, vt=-50,I=np.array()):
 	tau= dt = 0.25; #dt
 	N = len(I)
 
 	v = vr*np.ones(N)
 	u = np.zeros(N)
 	for i in range(N-1):
-		'''
-		if ramp is not None:
-			N = len(ramp)
-
-		I = 0
-		if ramp is not None:
-			I = ramp[i]
-		elif start <= i <= stop:
-			I = amp
-		'''
 
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
@@ -188,42 +143,21 @@ def get_vm_seven(C=89.7960714285714,
 def get_vm_one_two_three(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=[]):
-		  #N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
+		  vr=-65.2261863636364, vt=-50,I=np.array()):
 	tau= dt = 0.25; #dt
 	N = len(I)
 	v = vr*np.ones(N)
 	u = np.zeros(N)
-	#v[0] = vr
-	#v=vr*ones(1,n);  % initialize variables
-	#u=0*v;
 	for i in range(N-1):
-		'''
-		if ramp is not None:
-			N = len(ramp)
-		if pulse is not None:
-			N = len(pulse)
-
-		I = 0
-		if ramp is not None:
-			I = ramp[i]
-		if pulse is not None:
-			I = ramp[i]
-		if ramp is None and pulse is None:
-			if start <= i <= stop:
-				I = amp
-		'''
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
-		#u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
 
 		if v[i+1]>=vPeak:
 			v[i]=vPeak
 			v[i+1]=c
 			u[i+1]=u[i+1]+d  # reset u, except for FS cells
 	return v
-#@timer
 
 @jit(nopython=True)
 def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
@@ -245,28 +179,6 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 			vv[i]=V;
 		UU[i]=u;
 	return vv
-'''
-@jit(nopython=True)
-def get_vm_known_i(I,times,C=89.7960714285714,
-		 a=0.01, b=15, c=-60, d=10, k=1.6,
-		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,
-		  ):
-	tau= dt = 0.25#times[1]-times[0]#0.25; #dt
-	N = len(I)
-	v = np.zeros(N)
-	u = np.zeros(N)
-	v[0] = vr
-	for i in range(N-1):
-		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
-		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
-
-		if v[i+1]>=vPeak:
-			v[i]=vPeak
-			v[i+1]=c
-			u[i+1]=u[i+1]+d  # reset u, except for FS cells
-	return v
-'''
 
 
 class IZHIModel():
@@ -344,131 +256,18 @@ class IZHIModel():
 		self.attrs = attrs
 
 
-
-	'''
-	def step(self,amplitude, t_stop):
-
-	   Generate the waveform for a current that starts at zero and is stepped up
-	   to the given amplitude at time t_stop/10.
-
-	   times = np.array([0, t_stop/10, t_stop])
-	   amps = np.array([0, amplitude, amplitude])
-	   return times, amps
-
-
-	def pulse(self,amplitude, onsets, width, t_stop, baseline=0.0):
-
-		Generate the waveform for a series of current pulses.
-		Arguments:
-		amplitude - absolute current value during each pulse
-		onsets - a list or array of times at which pulses begin
-		width - duration of each pulse
-		t_stop - total duration of the waveform
-		baseline - the current value before, between and after pulses.
-		"""
-		times = [0]
-		amps = [baseline]
-		for onset in onsets:
-		   times += [onset, onset + width]
-		   amps += [amplitude, baseline]
-		times += [t_stop]
-		amps += [baseline]
-		return np.array(times), np.array(amps)
-
-
-	def ramp(self,gradient, onset, t_stop, baseline=0.0, time_step=0.25, t_start=0.0):
-
-		Generate the waveform for a current which is initially constant
-		and then increases linearly with time.
-		Arguments:
-		gradient - gradient of the ramp
-		onset - time at which the ramp begins
-		t_stop - total duration of the waveform
-		baseline - current value before the ramp
-		time_step - interval between increments in the ramp current
-		t_start - time at which the waveform begins (used to construct waveforms
-			  containing multiple ramps).
-
-		if onset > t_start:
-			times = np.hstack((np.array((t_start, onset)),  # flat part
-					   np.arange(onset + time_step, t_stop + time_step, time_step)))  # ramp part
-		else:
-			times = np.arange(t_start, t_stop + time_step, time_step)
-		amps = baseline + gradient*(times - onset) * (times > onset)
-		return times, amps
-	def inject_ramp_current(self, t_stop, gradient=0.000015, onset=30.0, baseline=0.0, t_start=0.0):
-		times, amps = self.ramp(gradient, onset, t_stop, baseline=0.0, t_start=0.0)
-
-		everything = copy.copy(self.attrs)
-
-		everything.update({'ramp':amps})
-		everything.update({'start':onset})
-		everything.update({'stop':t_stop})
-
-		if 'current_inj' in everything.keys():
-			everything.pop('current_inj',None)
-
-		self.attrs['celltype'] = round(self.attrs['celltype'])
-		if np.bool_(self.attrs['celltype'] <= 3):
-			everything.pop('celltype',None)
-			v = get_vm_one_two_three(**everything)
-		else:
-
-
-
-			if np.bool_(self.attrs['celltype'] == 4):
-				v = get_vm_four(**everything)
-			if np.bool_(self.attrs['celltype'] == 5):
-				v = get_vm_five(**everything)
-			if np.bool_(self.attrs['celltype'] == 6):
-				v = get_vm_six(**everything)
-			if np.bool_(self.attrs['celltype'] == 7):
-				v = get_vm_seven(**everything)
-
-
-		self.attrs
-
-		self.vM = AnalogSignal(v,
-							units=pq.mV,
-							sampling_period=0.25*pq.ms)
-
-		return self.vM
-
-	@cython.boundscheck(False)
-	@cython.wraparound(False)
-	#@jit
-	def stepify(self,times, values):
-		"""
-		Generate an explicitly-stepped version of a time series.
-		"""
-		new_times = np.empty((2*times.size - 1,))
-		new_values = np.empty_like(new_times)
-		new_times[::2] = times
-		new_times[1::2] = times[1:]
-		new_values[::2] = values
-		new_values[1::2] = values[:-1]
-		#print(len(new_values))
-		return new_times, new_values
-
-	'''
 	def wrap_known_i(self,i,times):
 		everything = self.attrs
 		if 'current_inj' in everything.keys():
 			everything.pop('current_inj',None)
 		if 'celltype' in everything.keys():
 			everything.pop('celltype',None)
-		#print(i)
-		#if len(i)<10:
-		#    times, i = self.stepify(times, i)
-		#    print(len(i),'bigger?')
-		#reduced = {'a':everything['a'],'b':everything['b'],'c':everything['c'],'d':everything['d'],'vr':everything['v_init']}
 		two_thousand_and_three=False
 		if two_thousand_and_three:
 			v = AnalogSignal(get_2003_vm(i,times,**reduced),units=pq.mV,sampling_period=0.25*pq.ms)
 		else:
 			v = AnalogSignal(get_vm_known_i(i,times,**everything),units=pq.mV,sampling_period=(times[1]-times[0])*pq.ms)
 		thresh = threshold_detection(v,0*pq.mV)
-		#print(len(thresh),'spikes',v.times[-1])
 		return v
 
 	@cython.boundscheck(False)
@@ -488,17 +287,13 @@ class IZHIModel():
 			attrs = self.default_attrs
 
 		self.attrs = attrs
-		self.attrs['I'] = I
+		self.attrs['I'] = np.array(I)
 
 		self.attrs['celltype'] = int(round(self.attrs['celltype']))
 		everything = copy.copy(self.attrs)
 
 		if 'current_inj' in everything.keys():
 			everything.pop('current_inj',None)
-		#if 'celltype' in everything.keys():
-		#	everything.pop('celltype',None)
-
-		#assert type(self.attrs['celltype']) is type(int())
 
 		if np.bool_(self.attrs['celltype'] <= 3):
 			everything.pop('celltype',None)
@@ -519,8 +314,6 @@ class IZHIModel():
 				everything.pop('celltype',None)
 				v = get_vm_seven(**everything)
 
-
-		#self.attrs
 		if 'I' in self.attrs.keys():
 			self.attrs.pop('I',None)
 
