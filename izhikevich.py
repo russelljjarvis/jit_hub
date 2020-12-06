@@ -80,10 +80,10 @@ def get_vm_five(C=89.7960714285714,
 
 
 @jit#(nopython=True)
-def get_vm_six(C=89.7960714285714,
+def get_vm_six(I,C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=np.array()):
+		  vr=-65.2261863636364, vt=-50):
 	tau= dt = 0.25; #dt
 	N = len(I)
 
@@ -112,7 +112,7 @@ def get_vm_six(C=89.7960714285714,
 def get_vm_seven(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=np.array()):
+		  vr=-65.2261863636364, vt=-50,I=np.array([0])):
 	tau= dt = 0.25; #dt
 	N = len(I)
 
@@ -143,7 +143,7 @@ def get_vm_seven(C=89.7960714285714,
 def get_vm_one_two_three(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=np.array()):
+		  vr=-65.2261863636364, vt=-50,I=np.array([0])):
 	tau= dt = 0.25; #dt
 	N = len(I)
 	v = vr*np.ones(N)
@@ -309,7 +309,9 @@ class IZHIModel():
 				v = get_vm_five(**everything)
 			if np.bool_(self.attrs['celltype'] == 6):
 				everything.pop('celltype',None)
-				v = get_vm_six(**everything)
+				if 'I' in self.attrs.keys():
+					everything.pop('I',None)
+				v = get_vm_six(self.attrs['I'],**everything)
 			if np.bool_(self.attrs['celltype'] == 7):
 				everything.pop('celltype',None)
 				v = get_vm_seven(**everything)
