@@ -8,7 +8,7 @@ import quantities as pq
 import numpy
 import copy
 from elephant.spike_train_generation import threshold_detection
-from ..capabilities import ProducesMembranePotential, ReceivesCurrent
+from capabilities import ProducesMembranePotential, ReceivesCurrent
 
 
 class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
@@ -98,7 +98,7 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
             times = np.arange(t_start, t_stop + time_step, time_step)
         amps = baseline + gradient*(times - onset) * (times > onset)
         return times, amps
-    
+
 
     def stepify(times, values):
         """
@@ -111,4 +111,3 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
         new_values[::2] = values
         new_values[1::2] = values[:-1]
         return new_times, new_values
-
