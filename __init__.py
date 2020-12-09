@@ -1,9 +1,6 @@
-"""SciUnit.
-
-A Testing Framework for Data-Driven Validation of
-Quantitative Scientific Models
 """
-
+JITHUB models
+"""
 
 from .models.model_classes import IzhiModel, MATModel
 from .backends import izhikevich
