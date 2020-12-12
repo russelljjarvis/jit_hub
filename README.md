@@ -2,9 +2,9 @@
 Single neuronal models encoded in python language numba speed up.
 Note model waveforms are returned in Neo Format, converting between array to neo might introduce a sometimes tolerable overhead.
 
+Models:
+Adaptive Exponential.
+Izhikevich 2007 (not 2003).
+Multi Time Scale Adaptive Neuron
 
-A slowly Expanding model Zoo. 
-
-# TODO 
-* add MAT neuron models
-* add Neo variable time step AnalogSignal
+[](https://zenodo.org/badge/304228004.svg)
