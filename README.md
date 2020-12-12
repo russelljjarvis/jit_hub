@@ -7,4 +7,4 @@ Models:
 * Izhikevich 2007 (not 2003).
 * Multi Time Scale Adaptive Neuron
 
-[(https://zenodo.org/badge/304228004.sv](https://zenodo.org/badge/304228004.svg)
+[![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
