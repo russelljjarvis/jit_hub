@@ -9,7 +9,7 @@ Models:
 
 To install.
 ```
-git clone https://github.com/russelljjarvis/jit_hub
+git clone -b dev https://github.com/russelljjarvis/jit_hub
 sudo pip install -e .
 ```
 
