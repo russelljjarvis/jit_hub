@@ -13,4 +13,7 @@ git clone -b dev https://github.com/russelljjarvis/jit_hub
 sudo pip install -e .
 ```
 
+[![jithub](https://circleci.com/gh/russelljjarvis/jit-hub.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit-hub)
+
+
 [![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
