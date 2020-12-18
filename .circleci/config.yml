@@ -1,0 +1,62 @@
+defaults: &defaults
+  working_directory: ~/
+  docker:
+    - image: continuumio/miniconda3
+
+#inst_conda_bld: &inst_conda_bld
+#  - run: conda config --add channels conda-forge
+#  - run: conda config --set always_yes true
+#  - run: conda config --set quiet true
+#  - run: conda install conda-build
+
+version: 2
+
+jobs:
+  build:
+    <<: *defaults
+    parallelism: 1
+    steps:
+      - checkout
+      - run: git fetch --unshallow || true
+      - run: conda config --add channels conda-forge
+      - run: conda config --set always_yes true
+      - run: conda config --set quiet true
+      - run: conda install conda-build
+      - run: which pip
+      - run: conda install scipy;
+      - run: conda install numpy;
+      - run: conda install numba;
+      - run: conda install dask;
+      - run: pip install pip --upgrade; pip install -r requirements.txt;
+      - run: pip install git+https://github.com/russelljjarvis/jit_hub.git@neuronunit
+
+
+      #- store_artifacts:
+      #    path: $(conda build devtools/conda-recipe --python=3.6 --output)
+      #    destination: build.tar.bz2
+      # Persist the specified paths (workspace/echo-output) into the workspace for use in downstream job.
+
+
+  test:
+    <<: *defaults
+    parallelism: 1
+    environment:
+      CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+      PYTHONHASHSEED: 0
+      OMP_NUM_THREADS: 1
+      PYEMMA_NJOBS: 1
+
+    steps:
+      - checkout
+
+      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - run: conda config --add channels conda-forge
+      - run: conda config --set always_yes true
+      - run: conda config --set quiet true
+      - run: conda install conda-build
+      - run: which pip
+      - run: conda install scipy;
+      - run: pip install pip --upgrade; pip install -r requirements.txt;
+      - run: pip install git+https://github.com/russelljjarvis/jit_hub.git@neuronunit
+      - run: python unittest/basic_run.py
