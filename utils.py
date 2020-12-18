@@ -50,6 +50,33 @@ for index,key in enumerate(reduced_cells.keys()):
     for k,v in trans_dict.items():
         reduced_cells[key][k] = v[index]
 
+def plot_model(IinRange,reduced_cells,
+                params,cell_key='RS',
+                title='Layer 5 regular spiking (RS) pyramidal cell (fig 8.12)',
+                direct=False):
+    for i,amp in enumerate(IinRange):
+        model = izhi.IZHIModel()
+        model.set_attrs(reduced_cells[cell_key])
+        params['amplitude'] = amp
+        plt.figure(figsize=(8,10))
+        plt.subplot(len(IinRange),1,i+1)
+
+        if direct:
+            vm = model.inject_direct_current(amp)
+            plt.plot(vm.times,vm.magnitude,label=str(' Amp:')+str(amp)+str(' (pA)'))
+            plt.ylabel(str(' Amp: (pA)'))
+            plt.xlabel(str(' Time: (ms)'))
+
+        else:
+            model.inject_square_current(params)
+            vm = model.get_membrane_potential()
+            plt.plot(vm.times,vm.magnitude,label=str(' Amp:')+str(amp)+str(' (pA)'))
+            plt.ylabel(str(' Amp: (pA)'))
+            plt.xlabel(str(' Time: (ms)'))
+
+            plt.legend()
+        plt.title(title)
+    plt.show()
 
 def transform_input(T,IinRange,Iin0,burstMode=True):
     tau=0.25; #%dt

@@ -2,14 +2,15 @@
 Single neuronal models encoded in python language numba speed up.
 Note model waveforms are returned in Neo Format, converting between array to neo might introduce a sometimes tolerable overhead.
 
-
-A slowly Expanding model Zoo: Currently includes AdExp, Izhikevich and MAT model.
-
+Models:
+* Adaptive Exponential.
+* Izhikevich 2007 (not 2003).
+* Multi Time Scale Adaptive Neuron
 
 To install.
 ```
-which pip
-sudo /home/user/anaconda3/bin/pip install -e .
+git clone https://github.com/russelljjarvis/jit_hub
+sudo pip install -e .
 ```
 
-TODO Add Neo variable time step AnalogSignal for the NEURON HH model
+[![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
