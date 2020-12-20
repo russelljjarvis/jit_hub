@@ -5,3 +5,4 @@ scipy
 sciunit
 cython
 git+https://github.com/scidash/neuronunit@dev
+asciiplotlib
