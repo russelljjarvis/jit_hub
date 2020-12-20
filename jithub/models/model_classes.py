@@ -1,7 +1,7 @@
 from .base import BaseModel
-from jithub.backends.izhikevich import JIT_IzhiBackend
-from jithub.backends.mat_nu import JIT_MATBackend
-from jithub.backends.adexp import JIT_ADEXPBackend
+from .backends.izhikevich import JIT_IzhiBackend
+from .backends.mat_nu import JIT_MATBackend
+from .backends.adexp import JIT_ADEXPBackend
 
 from copy import copy
 import collections
