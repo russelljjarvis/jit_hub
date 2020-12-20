@@ -20,6 +20,9 @@ jobs:
       - run: conda install numpy;
       - run: conda install numba;
       - run: conda install dask;
+      - run: apt-get install -y cpp gcc
+      - run: apt-get install -y libx11-6 python-dev git build-essential
+      - run: apt-get install -y autoconf automake gcc g++ make gfortran
       - run: pip install pip --upgrade; pip install -r requirements.txt;
       - run: python unittest/basic_run.py
 
