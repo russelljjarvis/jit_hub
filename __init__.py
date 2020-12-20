@@ -1,9 +1,5 @@
 """
 JITHUB models
 """
-
-from .models.model_classes import IzhiModel, MATModel
-from .backends import izhikevich
-from .backends import mat_nu
-
+import jithub
 #from .backends import izhikevich
