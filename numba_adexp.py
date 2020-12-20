@@ -23,7 +23,7 @@ from numba import jit
 # hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
 @jit
-def update_currents(amp, i, t, dt,start,stop):   
+def update_currents(amp, i, t, dt,start,stop):
   scalar = 0
   if start <= t <= stop:
     scalar = amp
@@ -39,7 +39,7 @@ def update_state(T, dt,v,w,
   i = 0
   spike_raster = [0 for ix in range(0,len(time_trace))]
   vm = []
-  
+
   for t_ind in range(0,len(time_trace)):
     t = time_trace[t_ind]
     if i!=0:
@@ -65,7 +65,7 @@ def update_state(T, dt,v,w,
   return len(spike_raster),vm
 @jit#(nopython=True)
 def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
-  n_spikes,vm = update_state(T=T, 
+  n_spikes,vm = update_state(T=T,
                                     dt=dt,
                                     v=v,
                                     w=w,
@@ -78,18 +78,20 @@ def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,
                                     delta_T =delta_T,cm=cm,time_trace=time_trace,
                                     amp = amp,start = start,stop = stop)
 
-  
+
   return vm,n_spikes
 
 
+class JIT_ADEXPBackend(Backend):
 
-class ADEXP():
-  name = 'ADEXP'
-  def __init__(self, attrs={}):
-    self.attrs = attrs
-    self.vM = None
-    self.temp_attrs = None
-    
+	name = 'ADEXP'
+	def init_backend(self):
+		super().init_backend()
+		self.attrs = self.model.attrs
+
+	def __init__(self, attrs=None):
+		self.vM = None
+		self.attrs = attrs
     BAE1 = {}
     BAE1['cm']=0.281
     BAE1['v_spike']=-40.0
@@ -105,6 +107,20 @@ class ADEXP():
     BAE1['spike_delta']=30
 
     self.default_attrs = BAE1
+
+		if type(attrs) is not type(None):
+			self.attrs = attrs
+		if self.attrs is None:
+			self.attrs = self.default_attrs
+
+
+
+	def set_stop_time(self, stop_time = 650*pq.ms):
+		"""Sets the simulation duration
+		stopTimeMs: duration in milliseconds
+		"""
+		self.tstop = float(stop_time.rescale(pq.ms))
+
 
   def simulate(self, attrs={}, T=50,dt=0.25,integration_time=30, I_ext={},spike_delta=50):
     spike_delta = spike_delta
@@ -124,7 +140,7 @@ class ADEXP():
     attrs = self.default_attrs
     attrs.update(self.model.attrs)
     v_rest =  attrs['v_rest']
-    v = v_rest 
+    v = v_rest
     #v = v_rest #voltage trace
     v_reset = attrs['v_reset']
     tau_m = attrs['tau_m']
@@ -137,7 +153,7 @@ class ADEXP():
     cm = attrs['cm']
     tau_w = attrs['tau_w']
 
-    
+
     amp = I_ext['pA']
     start = I_ext['start']
     stop = I_ext['stop']
@@ -206,3 +222,9 @@ class ADEXP():
     self.vM = vM
     self.n_spikes = n_spikes
     return vM
+	def _backend_run(self):
+		results = {}
+		results['vm'] = self.vM.magnitude
+		results['t'] = self.vM.times
+		results['run_number'] = results.get('run_number',0) + 1
+		return results

@@ -77,7 +77,7 @@ class ReceivesCurrent(ReceivesSquareCurrent):
         This is a time series of the current to be injected.
         """
         raise NotImplementedError()
-        
+
     def inject_square_current(self, **kwargs):
         """Injects somatic current into the model.
         Parameters
@@ -90,10 +90,11 @@ class ReceivesCurrent(ReceivesSquareCurrent):
         This describes the current to be injected.
         """
         try:
+            #print(kwargs)
             self._backend.inject_square_current(**kwargs)
         except AttributeError:
             raise NotImplementedError()
-        
+
     def inject_ramp_current(self, **kwargs):
         """Injects somatic current into the model.
         Parameters

@@ -1,12 +1,15 @@
 from .base import BaseModel
 from jithub.backends.izhikevich import JIT_IzhiBackend
 from jithub.backends.mat_nu import JIT_MATBackend
+from jithub.backends.adexp import JIT_ADEXPBackend
 
 from copy import copy
 import collections
 
 
 class BPOModel():
+    #def get_membrane_potential(self):
+    #    self._backend.get_membrane_potential()
 
     def check_name(self):
         """Check if name complies with requirements"""
@@ -83,9 +86,11 @@ class BPOModel():
         from neuronunit.optimisation.data_transport_container import DataTC
 
         dtc = DataTC(backend=self.backend)
-        if hasattr(self,'tests'):
-            if type(self.tests) is not type(None):
-                dtc.tests = self.tests
+        dtc.attrs = self.attrs
+        return dtc
+        #if hasattr(self,'tests'):
+        #    if type(self.tests) is not type(None):
+        #        dtc.tests = self.tests
 
         if type(attrs) is not type(None):
             if len(attrs):
@@ -143,6 +148,32 @@ class BPOModel():
 
 
 
+class ADEXPModel(BaseModel,BPOModel):
+    def __init__(self, name=None, params=None, backend=JIT_ADEXPBackend):
+        BAE1 = {}
+        BAE1['cm']=0.281
+        BAE1['v_spike']=-40.0
+        BAE1['v_reset']=-70.6
+        BAE1['v_rest']=-70.6
+        BAE1['tau_m']=9.3667
+        BAE1['a']=4.0
+        BAE1['b']=0.0805
+
+        BAE1['delta_T']=2.0
+        BAE1['tau_w']=144.0
+        BAE1['v_thresh']=-50.4
+        BAE1['spike_delta']=30
+
+        self.default_attrs = BAE1
+        if params is not None:
+            self.params = collections.OrderedDict(**params)
+        else:
+            self.params = self.default_attrs
+        super().__init__(name=name, attrs=self.params, backend=backend)
+    #def get_membrane_potential(self):
+        #super().__init__(name=name, attrs=self.params, backend=backend)
+    #    self._backend.get_membrane_potential()
+        #print('gets here')
 
 class IzhiModel(BaseModel,BPOModel):
     def __init__(self, name=None, params=None, backend=JIT_IzhiBackend):
@@ -150,20 +181,11 @@ class IzhiModel(BaseModel,BPOModel):
                               'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
                               'vPeak':(86.364525297619-65.2261863636364),
                               'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
-        #if attrs is None:
-        #    attrs = {}
-        #attrs_ = copy(self.default_attrs)
-        #for key, value in attrs:
-        #    attrs_[key] = value
         if params is not None:
             self.params = collections.OrderedDict(**params)
         else:
             self.params = self.default_attrs
         super().__init__(name=name, attrs=self.params, backend=backend)
-
-        #def get_spike_count(self):
-        #    self.
-        #super(BPOModel).__init__(name=name, attrs=attrs_, backend=backend)
 
 
 
