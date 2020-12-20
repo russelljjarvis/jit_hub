@@ -1,4 +1,4 @@
-import adexp
-import izhikevich
-import mat_nu
-import numba_adexp
+from . import adexp
+from . import izhikevich
+from . import mat_nu
+from . import numba_adexp
