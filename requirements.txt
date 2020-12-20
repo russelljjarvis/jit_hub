@@ -3,4 +3,5 @@ neo
 numpy
 scipy
 sciunit
+import cython
 git+https://github.com/scidash/neuronunit@dev
