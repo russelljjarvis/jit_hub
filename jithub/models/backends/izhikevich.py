@@ -8,177 +8,20 @@ voltage_units = mV
 import copy
 from elephant.spike_train_generation import threshold_detection
 
-from numba import jit#, autojit
+from numba import jit
+#, autojit
 import cython
-
-
-class JIT_IzhiBackend(Backend):
-	def init_backend(self):
-		super().init_backend()
-		self.attrs = self.model.attrs
-
-
-	def _backend_run(self):
-		"""Must return a neo.core.AnalogSignal"""
-		if self.vM is not None:
-			return self.vM
-		else:
-			everything = copy.copy(self.model.attrs)
-			if hasattr(self,'Iext'):
-				everything.update({'Iext':self.Iext})
-
-			if 'current_inj' in everything.keys():
-				everything.pop('current_inj',None)
-			everything = copy.copy(self.model.attrs)
-
-			self.model.attrs['celltype'] = round(self.model.attrs['celltype'])
-			if self.model.attrs['celltype'] <= 3:
-				everything.pop('celltype',None)
-				v = get_vm_matlab_one_two_three(**everything)
-			else:
-				if self.model.attrs['celltype'] == 4:
-					v = get_vm_matlab_four(**everything)
-				if self.model.attrs['celltype'] == 5:
-					v = get_vm_matlab_five(**everything)
-				if self.model.attrs['celltype'] == 6:
-					v = get_vm_matlab_six(**everything)
-				if self.model.attrs['celltype'] == 7:
-					#print('gets into multiple regimes',self.attrs['celltype'])
-
-					v = get_vm_matlab_seven(**everything)
-
-			return AnalogSignal(v, units=pq.mV,
-								sampling_period=0.125*pq.ms)
-
-
-	def inject_ramp_current(self, t_stop, gradient=0.000015, onset=30.0, baseline=0.0, t_start=0.0):
-		times, amps = self.ramp(gradient, onset, t_stop, baseline=0.0, t_start=0.0)
-
-		everything = copy.copy(self.attrs)
-
-		everything.update({'ramp':amps})
-		everything.update({'start':onset})
-		everything.update({'stop':t_stop})
-
-		if 'current_inj' in everything.keys():
-			everything.pop('current_inj',None)
-
-		self.attrs['celltype'] = round(self.attrs['celltype'])
-		if np.bool_(self.attrs['celltype'] <= 3):
-			everything.pop('celltype',None)
-			v = get_vm_matlab_one_two_three(**everything)
-		else:
-
-
-
-			if np.bool_(self.attrs['celltype'] == 4):
-				v = get_vm_matlab_four(**everything)
-			if np.bool_(self.attrs['celltype'] == 5):
-				v = get_vm_matlab_five(**everything)
-			if np.bool_(self.attrs['celltype'] == 6):
-				v = get_vm_matlab_six(**everything)
-			if np.bool_(self.attrs['celltype'] == 7):
-				v = get_vm_matlab_seven(**everything)
-
-
-		self.attrs
-
-		self.vM = AnalogSignal(v,
-							units=pq.mV,
-							sampling_period=0.125*pq.ms)
-
-		return self.vM
-
-
-	@cython.boundscheck(False)
-	@cython.wraparound(False)
-	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms):
-		"""
-		Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
-		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
-		where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
-		Description: A parameterized means of applying current injection into defined
-		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
-
-		"""
-
-		attrs = self.model.attrs
-		if attrs is None:
-			attrs = self.model.default_attrs
-
-		self.attrs = attrs
-		square = True
-		amplitude = float(amplitude.magnitude)
-		duration = float(duration)
-		delay = float(delay)
-		#print(amplitude,duration,delay)
-		tMax = delay + duration #+ 200.0#*pq.ms
-
-		#self.set_stop_time(tMax*pq.ms)
-		tMax = self.tstop = float(tMax)
-		N = int(tMax/0.125)
-		Iext = np.zeros(N)
-		delay_ind = int((delay/tMax)*N)
-		duration_ind = int((duration/tMax)*N)
-
-		Iext[0:delay_ind-1] = 0.0
-		Iext[delay_ind:delay_ind+duration_ind-1] = amplitude
-		Iext[delay_ind+duration_ind::] = 0.0
-		self.Iext = None
-		self.Iext = Iext
-
-
-		everything = copy.copy(self.attrs)
-		everything.update({'N':len(Iext)})
-
-		#everything.update({'Iext':Iext})
-		everything.update({'start':delay_ind})
-		everything.update({'stop':delay_ind+duration_ind})
-		everything.update({'amp':amplitude})
-
-		if 'current_inj' in everything.keys():
-			everything.pop('current_inj',None)
-		#import pdb; pdb.set_trace()
-		self.attrs['celltype'] = round(self.attrs['celltype'])
-		if np.bool_(self.attrs['celltype'] <= 3):
-			everything.pop('celltype',None)
-			v = get_vm_matlab_one_two_three(**everything)
-		else:
-
-
-
-			if np.bool_(self.attrs['celltype'] == 4):
-				v = get_vm_matlab_four(**everything)
-			if np.bool_(self.attrs['celltype'] == 5):
-				v = get_vm_matlab_five(**everything)
-			if np.bool_(self.attrs['celltype'] == 6):
-				v = get_vm_matlab_six(**everything)
-			if np.bool_(self.attrs['celltype'] == 7):
-				v = get_vm_matlab_seven(**everything)
-
-
-		self.attrs
-
-		self.vM = AnalogSignal(v,
-							units=pq.mV,
-							sampling_period=0.125*pq.ms)
-		#print(np.std(v))
-		return self.vM
-
-
 
 @jit(nopython=True)
 def get_vm_four(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
 		  vr=-65.2261863636364, vt=-50,I=[]):
-		  #celltype=1, N=0,start=0,stop=0,amp=0,ramp=None):
 	tau = dt = 0.25
 	N = len(I)
 
 	v = vr*np.ones(N)
 	u = np.zeros(N)
-
 	v[0] = vr
 	for i in range(N-1):
 		# forward Euler method
@@ -194,12 +37,11 @@ def get_vm_four(C=89.7960714285714,
 
 	return v
 
-@jit#(nopython=True)
+@jit(nopython=True)
 def get_vm_five(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=[]):#celltype=1,
-		  #N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
+		  vr=-65.2261863636364, vt=-50,I=[]):
 	N = len(I)
 
 	tau= dt = 0.25; #dt
@@ -225,11 +67,11 @@ def get_vm_five(C=89.7960714285714,
 
 
 
-@jit#(nopython=True)
-def get_vm_six(I,C=89.7960714285714,
+@jit(nopython=True)
+def get_vm_six(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50):
+		  vr=-65.2261863636364, vt=-50,I=[]):
 	tau= dt = 0.25; #dt
 	N = len(I)
 
@@ -254,16 +96,16 @@ def get_vm_six(I,C=89.7960714285714,
 
 	return v
 
-@jit#(nopython=True)
+@jit(nopython=True)
 def get_vm_seven(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=np.array([0])):
+		  vr=-65.2261863636364, vt=-50,I=[]):
 	tau= dt = 0.25; #dt
 	N = len(I)
-
 	v = vr*np.ones(N)
 	u = np.zeros(N)
+	v[0] = vr
 	for i in range(N-1):
 
 		# forward Euler method
@@ -289,15 +131,18 @@ def get_vm_seven(C=89.7960714285714,
 def get_vm_one_two_three(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
-		  vr=-65.2261863636364, vt=-50,I=np.array([0])):
+		  vr=-65.2261863636364, vt=-50,I=[]):
+		  #N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
 	tau= dt = 0.25; #dt
 	N = len(I)
 	v = vr*np.ones(N)
 	u = np.zeros(N)
+	v[0] = vr
 	for i in range(N-1):
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
+		#u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
 
 		if v[i+1]>=vPeak:
 			v[i]=vPeak
@@ -327,9 +172,12 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 	return vv
 
 
-class IZHIModel():
+class JIT_IzhiBackend(Backend):
 
 	name = 'IZHI'
+	def init_backend(self):
+		super().init_backend()
+		self.attrs = self.model.attrs
 
 	def __init__(self, attrs=None):
 		self.vM = None
@@ -346,9 +194,6 @@ class IZHIModel():
 			self.attrs = self.default_attrs
 
 
-	def get_spike_count(self):
-		thresh = threshold_detection(self.vM,0*qt.mV)
-		return len(thresh)
 
 	def set_stop_time(self, stop_time = 650*pq.ms):
 		"""Sets the simulation duration
@@ -400,6 +245,91 @@ class IZHIModel():
 
 		return self.vM
 
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
+	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms):
+		"""
+		Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
+		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
+		where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
+		Description: A parameterized means of applying current injection into defined
+		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
+
+		"""
+
+		attrs = self.model.attrs
+		if attrs is None:
+			attrs = self.model.default_attrs
+
+		self.attrs = attrs
+		square = True
+
+		if isinstance(amplitude,type(dict())):
+			c = amplitude
+			amplitude = float(c['amplitude'].simplified)
+			duration = float(c['duration'])#.simplified)
+			delay = float(c['delay'])#.simplified)
+
+		amplitude = float(amplitude)
+		duration = float(duration)
+		delay = float(delay)
+		#print(amplitude,duration,delay)
+		tMax = delay + duration #+ 200.0#*pq.ms
+
+		#self.set_stop_time(tMax*pq.ms)
+		tMax = self.tstop = float(tMax)
+		N = int(tMax/0.25)
+		Iext = np.zeros(N)
+		delay_ind = int((delay/tMax)*N)
+		duration_ind = int((duration/tMax)*N)
+
+		Iext[0:delay_ind-1] = 0.0
+		Iext[delay_ind:delay_ind+duration_ind-1] = amplitude
+		Iext[delay_ind+duration_ind::] = 0.0
+		self.Iext = None
+		self.Iext = Iext
+		self.attrs['I'] = Iext
+
+
+
+		everything = copy.copy(self.attrs)
+		everything.pop('celltype',None)
+
+		everything['I'] = Iext
+		#everything.update({'N':len(Iext)})
+
+		#everything.update({'Iext':Iext})
+		#everything.update({'start':delay_ind})
+		#everything.update({'stop':delay_ind+duration_ind})
+		#everything.update({'amp':amplitude})
+
+		if 'current_inj' in everything.keys():
+			everything.pop('current_inj',None)
+		#import pdb; pdb.set_trace()
+		self.attrs['celltype'] = round(self.attrs['celltype'])
+
+		if np.bool_(self.attrs['celltype'] <= 3):
+			v = get_vm_one_two_three(**everything)
+		else:
+
+			if np.bool_(self.attrs['celltype'] == 4):
+				v = get_vm_four(**everything)
+			if np.bool_(self.attrs['celltype'] == 5):
+				v = get_vm_five(**everything)
+			if np.bool_(self.attrs['celltype'] == 6):
+				v = get_vm_six(**everything)
+			if np.bool_(self.attrs['celltype'] == 7):
+				v = get_vm_seven(**everything)
+
+
+
+		self.vM = AnalogSignal(v,
+							units=pq.mV,
+							sampling_period=0.25*pq.ms)
+		self.attrs.pop('I',None)
+		return self.vM
+
+
 	def set_attrs(self, attrs):
 		self.attrs = attrs
 
@@ -418,6 +348,11 @@ class IZHIModel():
 			v = AnalogSignal(get_vm_known_i(i,times,**everything),units=pq.mV,sampling_period=(times[1]-times[0])*pq.ms)
 		thresh = threshold_detection(v,0*pq.mV)
 		return v
+
+
+	def get_spike_count(self):
+		thresh = threshold_detection(self.vM,0*pq.mV)
+		return len(thresh)
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
@@ -500,112 +435,13 @@ class IZHIModel():
 				v = get_vm_six(**everything)
 			if np.bool_(self.attrs['celltype'] == 7):
 				v = get_vm_seven(**everything)
-
-
-		self.attrs
-
 		self.vM = AnalogSignal(v,
 							units=pq.mV,
 							sampling_period=0.25*pq.ms)
 
 		return self.vM
-
-
-	@cython.boundscheck(False)
-	@cython.wraparound(False)
-	def inject_square_current(self, current):
-		"""
-		Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
-		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
-		where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
-		Description: A parameterized means of applying current injection into defined
-		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
-
-		"""
-
-		attrs = self.attrs
-		if attrs is None:
-			attrs = self.default_attrs
-
-		self.attrs = attrs
-		if 'delay' in current.keys() and 'duration' in current.keys():
-			square = True
-			c = current
-		if isinstance(c['amplitude'],type(pq)):
-			amplitude = float(c['amplitude'].simplified)
-			print(c['amplitude'],c['amplitude'].simplified)
-			duration = float(c['duration'])#.simplified)
-			delay = float(c['delay'])#.simplified)
-		else:
-			amplitude = float(c['amplitude'])
-			duration = float(c['duration'])
-			delay = float(c['delay'])
-		#print(amplitude,duration,delay)
-		tMax = delay + duration #+ 200.0#*pq.ms
-
-		#self.set_stop_time(tMax*pq.ms)
-		tMax = self.tstop = float(tMax)
-		N = int(tMax/0.25)
-		Iext = np.zeros(N)
-		delay_ind = int((delay/tMax)*N)
-		duration_ind = int((duration/tMax)*N)
-
-		Iext[0:delay_ind-1] = 0.0
-		Iext[delay_ind:delay_ind+duration_ind-1] = amplitude
-		Iext[delay_ind+duration_ind::] = 0.0
-		self.Iext = None
-		self.Iext = Iext
-
-
-		everything = copy.copy(self.attrs)
-		everything.update({'N':len(Iext)})
-
-		#everything.update({'Iext':Iext})
-		everything.update({'start':delay_ind})
-		everything.update({'stop':delay_ind+duration_ind})
-		everything.update({'amp':amplitude})
-
-		if 'current_inj' in everything.keys():
-			everything.pop('current_inj',None)
-
-
-		self.attrs['celltype'] = int(round(self.attrs['celltype']))
-		assert type(self.attrs['celltype']) is type(int())
-
-		if np.bool_(self.attrs['celltype'] <= 3):
-			everything.pop('celltype',None)
-			v = get_vm_one_two_three(**everything)
-		else:
-
-
-			if np.bool_(self.attrs['celltype'] == 4):
-				v = get_vm_four(**everything)
-			if np.bool_(self.attrs['celltype'] == 5):
-				v = get_vm_five(**everything)
-			if np.bool_(self.attrs['celltype'] == 6):
-				v = get_vm_six(**everything)
-			if np.bool_(self.attrs['celltype'] == 7):
-				v = get_vm_seven(**everything)
-
-
-		self.attrs
-
-		self.vM = AnalogSignal(v,
-							units=pq.mV,
-							sampling_period=0.25*pq.ms)
-
-		return self.vM
-
 	def _backend_run(self):
 		results = {}
-		if len(self.attrs) > 1:
-			v = get_vm(**self.attrs)
-		else:
-			v = get_vm(self.attrs)
-
-		self.vM = AnalogSignal(v,
-							   units = voltage_units,
-							   sampling_period = 0.25*pq.ms)
 		results['vm'] = self.vM.magnitude
 		results['t'] = self.vM.times
 		results['run_number'] = results.get('run_number',0) + 1

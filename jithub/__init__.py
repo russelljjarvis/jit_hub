@@ -1,10 +1,10 @@
 """
 JITHUB models
 """
-
+#import .models
 from .models.model_classes import IzhiModel, MATModel
-from .backends import izhikevich
-from .backends import mat_nu
-from .backends import adexp
+from .models.backends import izhikevich
+from .models.backends import mat_nu
+from .models.backends import adexp
 
 #from .backends import izhikevich
