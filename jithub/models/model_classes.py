@@ -83,7 +83,7 @@ class BPOModel():
             dtc
             DTC is a simulator indipendent data transport container object.
         """
-        from neuronunit.optimisation.data_transport_container import DataTC
+        from neuronunit.optimization.data_transport_container import DataTC
 
         dtc = DataTC(backend=self.backend)
         dtc.attrs = self.attrs
