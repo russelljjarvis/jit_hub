@@ -10,4 +10,4 @@ Models:
 [![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
 
 
-[![Build Status](https://circleci.com/gh/russelljjarvis/jit_hub.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)
+[![Build Status](https://circleci.com/gh/russelljjarvis/jit_hub/tree/neuronunit.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)
