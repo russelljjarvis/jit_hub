@@ -17,3 +17,4 @@ sudo pip install -e .
 
 
 [![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
+[![Build Status](https://circleci.com/gh/jit_hub/BluePyOpt.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)
