@@ -172,7 +172,7 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 	return vv
 
 
-class JIT_IzhiBackend(Backend):
+class JIT_IZHIBackend(Backend):
 
 	name = 'IZHI'
 	def init_backend(self):

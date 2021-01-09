@@ -1,5 +1,5 @@
 from .base import BaseModel
-from .backends.izhikevich import JIT_IzhiBackend
+from .backends.izhikevich import JIT_IZHIBackend
 from .backends.mat_nu import JIT_MATBackend
 from .backends.adexp import JIT_ADEXPBackend
 
@@ -176,7 +176,7 @@ class ADEXPModel(BaseModel,BPOModel):
         #print('gets here')
 
 class IzhiModel(BaseModel,BPOModel):
-    def __init__(self, name=None, params=None, backend=JIT_IzhiBackend):
+    def __init__(self, name=None, params=None, backend=JIT_IZHIBackend):
         self.default_attrs = {'C':89.7960714285714,
                               'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
                               'vPeak':(86.364525297619-65.2261863636364),
