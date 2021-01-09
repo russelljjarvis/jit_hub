@@ -6,7 +6,6 @@ https://github.com/melizalab/mat-neuron/blob/master/mat_neuron/_pymodel.py
 
 """
 from sciunit.models.backends import Backend
-import asciiplotlib as apl
 
 #from __future__ import division, print_function, absolute_import
 
