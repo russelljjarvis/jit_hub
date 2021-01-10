@@ -1,7 +1,6 @@
 from quantities import mV, ms, s, V
 from neo import AnalogSignal
 import numpy as np
-import quantities as qt
 import quantities as pq
 import numpy
 voltage_units = mV
@@ -9,26 +8,25 @@ import cython
 from elephant.spike_train_generation import threshold_detection
 import numpy as np
 from numba import jit
-#from matplotlib import pyplot as plt
 from sciunit.models.backends import Backend
 
-# code is a very aggressive
-# hack on this repository:
+# code is a very aggressive hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
-@jit
-def update_currents(amp, i, t, dt,start,stop):
-	scalar = 0
-	if start <= t <= stop:
-		scalar = amp
-	return scalar
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @jit(nopython=True)
-def update_state(T, dt,v,w,
-						v_reset,b,a,spike_raster,
-						spike_delta,v_rest,tau_m,
-						tau_w,v_thresh,delta_T,cm,time_trace,amp,start,stop):
+def evaluate_vm(time_trace,
+				dt,
+				T,
+				v,
+				w,b,a,
+				spike_delta,
+				spike_raster,
+				v_reset,
+				v_rest,
+				tau_m,tau_w,v_thresh,
+				delta_T,cm,amp,start,stop):
+
   i = 0
   spike_raster = [0 for ix in range(0,len(time_trace))]
   vm = []
@@ -55,26 +53,71 @@ def update_state(T, dt,v,w,
 		  spike_raster[i] = 0
 	  vm.append(v)
 	  i+=1
-  return spk_cnt,vm
-@jit(nopython=True)
-def evaluate_vm(time_trace,dt,T,v,w,b,a,spike_delta,spike_raster,v_reset,v_rest,tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop):
-  n_spikes,vm = update_state(T=T,
-									dt=dt,
-									v=v,
-									w=w,
-									spike_raster=spike_raster,
-									v_reset=v_reset,
-									b=b,a=a,
-									spike_delta=spike_delta,
-									v_rest=v_rest,tau_m=tau_m,tau_w=tau_w,
-									v_thresh=v_thresh,
-									delta_T =delta_T,cm=cm,time_trace=time_trace,
-									amp = amp,start = start,stop = stop)
+  return vm,spk_cnt
+'''
+Too hard
+from numba import vectorize
+def eval_model_collection(list_of_param_dicts):
+	@vectorize(['float32(float32, float32)',
+	            'float64(float64, float64)'],target='cpu')
+	def evaluate_vm_collection(time_trace,
+					dt,
+					T,
+					v,
+					w,
+					b,
+					a,
+					spike_delta,
+					spike_raster,
+					v_reset,
+					v_rest,
+					tau_m,tau_w,v_thresh,
+					delta_T,cm,amp,start,stop):
 
+	  i = 0
+	  spike_raster = [0 for ix in range(0,len(time_trace))]
+	  vm = []
+	  spk_cnt = 0
+	  for t_ind in range(0,len(time_trace)):
+		  t = time_trace[t_ind]
+		  if i!=0:
+			  I_scalar = 0
+		  if start <= t <= stop:
+			  I_scalar = amp
+		  if spike_raster[i-1]:
+			  v = v_reset
+			  w += b
+		  dv  = (((v_rest-v) + \
+				delta_T*np.exp((v - v_thresh)/delta_T))/tau_m + \
+				(I_scalar - w)/cm) *dt
+		  v += dv
+		  w += dt * (a*(v - v_rest) - w)/tau_w * dt
+		  if v>v_thresh:
+			  v = spike_delta
+			  spike_raster[i] = 1
+			  spk_cnt += 1
+		  else:
+			  spike_raster[i] = 0
+		  vm.append(v)
+		  i+=1
+	  return vm,spk_cnt
 
-  return vm,n_spikes
-
-
+	#npoints = int(1e7)
+	#a = np.arange(npoints,dtype=np.float32)
+	list_of_param_dicts
+	result = evaluate_vm_collection(time_trace,
+					dt,
+					T,
+					v,
+					w,b,a,
+					spike_delta,
+					spike_raster,
+					v_reset,
+					v_rest,
+					tau_m,tau_w,v_thresh,
+					delta_T,cm,amp,start,stop)
+	return result
+'''
 class JIT_ADEXPBackend(Backend):
 
 	name = 'ADEXP'
@@ -177,8 +220,8 @@ class JIT_ADEXPBackend(Backend):
 		Description: A parameterized means of applying current injection into defined
 		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
 		"""
-
-		temp_attrs =  self.attrs
+		#self.set_attrs(self.attrs)
+		#temp_attrs =  self._attrs
 		amplitude = float(amplitude.magnitude)
 		duration = float(duration)
 		delay = float(delay)
@@ -190,7 +233,7 @@ class JIT_ADEXPBackend(Backend):
 		stim = {'start':delay,'stop':duration+delay,'pA':amplitude}
 
 		vm,n_spikes = self.simulate(
-			attrs=temp_attrs,\
+			attrs=self.attrs,\
 			T=tMax,\
 			dt=0.25,\
 			I_ext=stim)
