@@ -1,7 +1,6 @@
 # numba reduced neuoronal models
 Single neuronal models encoded in python language numba speed up.
-Note model waveforms are returned in Neo Format, converting between array to neo might introduce a sometimes tolerable overhead.
-
+Note model waveforms are returned in Neo Format and model currents and voltages are represented with quantities units.
 Models:
 * Adaptive Exponential.
 * [Izhikevich 2007 (not 2003).](https://github.com/OpenSourceBrain/IzhikevichModel/blob/master/numba/faster_izhikevich_model.ipynb)
