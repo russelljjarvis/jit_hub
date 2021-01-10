@@ -4,7 +4,7 @@ Note model waveforms are returned in Neo Format, converting between array to neo
 
 Models:
 * Adaptive Exponential.
-* Izhikevich 2007 (not 2003).
+* [Izhikevich 2007 (not 2003).](https://github.com/OpenSourceBrain/IzhikevichModel/blob/master/numba/faster_izhikevich_model.ipynb)
 * Multi Time Scale Adaptive Neuron
 
 To install.
