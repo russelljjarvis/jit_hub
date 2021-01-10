@@ -1,23 +1,17 @@
-
-from sciunit.models.backends import Backend
-
 from quantities import mV, ms, s, V
 from neo import AnalogSignal
 import numpy as np
 import quantities as qt
-
 import quantities as pq
 import numpy
 voltage_units = mV
 import cython
-
 from elephant.spike_train_generation import threshold_detection
-
-
 import numpy as np
 from numba import jit
+#from matplotlib import pyplot as plt
+from sciunit.models.backends import Backend
 
-from matplotlib import pyplot as plt
 # code is a very aggressive
 # hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
@@ -88,9 +82,8 @@ class JIT_ADEXPBackend(Backend):
 		super().init_backend()
 
 	def __init__(self, attrs=None):
-		#print(attrs)
 		self.vM = None
-		self.attrs = attrs
+		self._attrs = attrs
 		BAE1 = {}
 		BAE1['cm']=0.281
 		BAE1['v_spike']=-40.0
@@ -107,9 +100,9 @@ class JIT_ADEXPBackend(Backend):
 		self.default_attrs = BAE1
 
 		if type(attrs) is not type(None):
-			self.attrs = attrs
-		if self.attrs is None:
-			self.attrs = self.default_attrs
+			self._attrs = attrs
+		if self._attrs is None:
+			self._attrs = self.default_attrs
 
 
 
@@ -140,8 +133,6 @@ class JIT_ADEXPBackend(Backend):
 		v_thresh = attrs['v_thresh']
 		cm = attrs['cm']
 		tau_w = attrs['tau_w']
-
-
 		amp = I_ext['pA']
 		start = I_ext['start']
 		stop = I_ext['stop']
@@ -153,12 +144,18 @@ class JIT_ADEXPBackend(Backend):
 
 
 	def get_spike_count(self):
-	  	return self.n_spikes
+		return self.n_spikes
 
-	def set_attrs(self,attrs):
+
+	@property
+	def attrs(self):
+		return self._attrs
+
+	@attrs.setter
+	def attrs(self,attrs):
 		self.default_attrs.update(attrs)
 		attrs = self.default_attrs
-		self.attrs = attrs
+		self._attrs = attrs
 		if not hasattr(self.model,'attrs'):
 			self.model.attrs = {}
 			self.model.attrs.update(attrs)
@@ -181,27 +178,10 @@ class JIT_ADEXPBackend(Backend):
 		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
 		"""
 
-		'''
-		attrs = self.model.attrs
-		if attrs is None:
-			attrs = self.model.default_attrs
-
-		self.attrs = attrs
-		'''
 		temp_attrs =  self.attrs
-		#import pdb
-		#pdb.set_trace()
-		'''
-		if 'injected_square_current' in current.keys():
-			c = current['injected_square_current']
-		else:
-			c = current
-		'''
 		amplitude = float(amplitude.magnitude)
-		#print(amplitude,'amp')
 		duration = float(duration)
 		delay = float(delay)
-		#	print(duration,delay,'duration,delay')
 		tMax = delay + duration# + 200.0
 
 		self.set_stop_time(stop_time = tMax*pq.ms)
@@ -220,14 +200,7 @@ class JIT_ADEXPBackend(Backend):
 
 		self.vM = vM
 		self.n_spikes = n_spikes
-		'''
-		plt.plot(vM.times,vM)
-		plt.show()
-		print(vM.units)
-		print('attrs',self.attrs,voltage_units)
-		print(self.n_spikes,'spikes')
-		print(self.vM[-1])
-		'''
+
 		return self.vM
 	def _backend_run(self):
 		results = {}

@@ -4,5 +4,6 @@ numpy
 scipy
 sciunit
 cython
+ipfx
 git+https://github.com/scidash/neuronunit@optimization
-asciiplotlib
+git+https://github.com/russelljjarvis/sciunit@dev
