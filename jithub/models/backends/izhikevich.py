@@ -173,23 +173,18 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 class JIT_IZHIBackend(Backend):
 
 	name = 'IZHI'
-	def init_backend(self):
-		super().init_backend()
-		self.attrs = self.model.attrs
-
 	def __init__(self, attrs=None):
 		self.vM = None
 		self.attrs = attrs
 		self.temp_attrs = None
-		self.default_attrs = {'C':89.7960714285714,
-			'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
-			'vPeak':(86.364525297619-65.2261863636364),
-			'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
-
 		if type(attrs) is not type(None):
-			self.attrs = attrs
+			self._attrs = attrs
 		if self.attrs is None:
-			self.attrs = self.default_attrs
+			self._attrs = self.default_attrs
+
+	def as_sciunit_model(self):
+		super().init_backend(attrs=self.attrs)
+		return self
 
 
 
@@ -255,7 +250,7 @@ class JIT_IZHIBackend(Backend):
 
 		"""
 
-		attrs = self.model.attrs
+		attrs = self.attrs
 		if attrs is None:
 			attrs = self.model.default_attrs
 
@@ -271,7 +266,7 @@ class JIT_IZHIBackend(Backend):
 		amplitude = float(amplitude)
 		duration = float(duration)
 		delay = float(delay)
-		tMax = delay + duration 
+		tMax = delay + duration
 		tMax = self.tstop = float(tMax)
 		N = int(tMax/0.25)
 		Iext = np.zeros(N)
@@ -323,9 +318,26 @@ class JIT_IZHIBackend(Backend):
 		self.attrs.pop('I',None)
 		return self.vM
 
+	@property
+	def attrs(self):
+		return self._attrs
 
-	def set_attrs(self, attrs):
-		self.attrs = attrs
+	@attrs.setter
+	def attrs(self,attrs):
+		self.default_attrs = {'C':89.7960714285714,
+			'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
+			'vPeak':(86.364525297619-65.2261863636364),
+			'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
+		#print(type(self.default_attrs),type(attrs))
+		if attrs is not None:
+			self.default_attrs.update(attrs)
+
+		self._attrs = self.default_attrs
+		# = attrs
+		if hasattr(self,'model'):
+			if not hasattr(self.model,'attrs'):
+				self.model.attrs = {}
+				self.model.attrs.update(attrs)
 
 
 

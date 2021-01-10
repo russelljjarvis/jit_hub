@@ -9,7 +9,7 @@ from elephant.spike_train_generation import threshold_detection
 import numpy as np
 from numba import jit
 from sciunit.models.backends import Backend
-
+from sciunit.models import RunnableModel
 # code is a very aggressive hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
 @cython.boundscheck(False)
@@ -118,13 +118,15 @@ def eval_model_collection(list_of_param_dicts):
 					delta_T,cm,amp,start,stop)
 	return result
 '''
-class JIT_ADEXPBackend(Backend):
+class JIT_ADEXPBackend(Backend,RunnableModel):
 
 	name = 'ADEXP'
-	def init_backend(self):
-		super().init_backend()
+	#def init_backend(self):
+	#	super().init_backend()
 
 	def __init__(self, attrs=None):
+		super().__init__()
+		super().init_backend(attrs=self.attrs)
 		self.vM = None
 		self._attrs = attrs
 		BAE1 = {}
@@ -147,6 +149,9 @@ class JIT_ADEXPBackend(Backend):
 		if self._attrs is None:
 			self._attrs = self.default_attrs
 
+	def as_sciunit_model(self):
+		super().__init__()
+		return self
 
 
 	def set_stop_time(self, stop_time = 650*pq.ms):

@@ -24,28 +24,7 @@ jobs:
       - run: apt-get install -y libx11-6 python-dev git build-essential
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
       #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
-      - run: pip install pip --upgrade; pip install -r requirements.txt;
+      - run: pip install pip --upgrade;
+      #pip install -r requirements.txt;
       - run: pip install -e .;
-      - run: python unittest/basic_run.py
-
-
-
-  test:
-    <<: *defaults
-    parallelism: 1
-    environment:
-      PYTHONHASHSEED: 0
-      OMP_NUM_THREADS: 1
-      PYEMMA_NJOBS: 1
-
-    steps:
-      - checkout
-      - run: conda config --add channels conda-forge
-      - run: conda config --set always_yes true
-      - run: conda config --set quiet true
-      - run: conda install conda-build
-      - run: which pip
-      - run: conda install scipy;
-      - run: pip install pip --upgrade; pip install -r requirements.txt;
-      - run: pip install -e .
       - run: python unittest/basic_run.py
