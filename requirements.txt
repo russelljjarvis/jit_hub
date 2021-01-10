@@ -5,5 +5,5 @@ scipy
 sciunit
 cython
 ipfx
-git+https://github.com/scidash/neuronunit@optimization
+git+https://github.com/russelljjarvis/neuronunit@optimization
 git+https://github.com/russelljjarvis/sciunit@dev
