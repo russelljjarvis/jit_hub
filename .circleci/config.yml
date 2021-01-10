@@ -23,8 +23,8 @@ jobs:
       - run: apt-get install -y cpp gcc
       - run: apt-get install -y libx11-6 python-dev git build-essential
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
+      #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install pip --upgrade; pip install -r requirements.txt;
-      - run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install -e .;
       - run: python unittest/basic_run.py
 

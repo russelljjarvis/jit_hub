@@ -1,4 +1,3 @@
-from sciunit.models.backends import Backend
 from quantities import mV, ms, s, V
 from neo import AnalogSignal
 import numpy as np
@@ -7,9 +6,8 @@ import numpy
 voltage_units = mV
 import copy
 from elephant.spike_train_generation import threshold_detection
-
+from sciunit.models.backends import Backend
 from numba import jit
-#, autojit
 import cython
 
 @jit(nopython=True)
@@ -273,10 +271,7 @@ class JIT_IZHIBackend(Backend):
 		amplitude = float(amplitude)
 		duration = float(duration)
 		delay = float(delay)
-		#print(amplitude,duration,delay)
-		tMax = delay + duration #+ 200.0#*pq.ms
-
-		#self.set_stop_time(tMax*pq.ms)
+		tMax = delay + duration 
 		tMax = self.tstop = float(tMax)
 		N = int(tMax/0.25)
 		Iext = np.zeros(N)
@@ -296,7 +291,6 @@ class JIT_IZHIBackend(Backend):
 		everything.pop('celltype',None)
 
 		everything['I'] = Iext
-		#everything.update({'N':len(Iext)})
 
 		#everything.update({'Iext':Iext})
 		#everything.update({'start':delay_ind})
