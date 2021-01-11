@@ -80,7 +80,7 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 		if self._attrs is None:
 			self._attrs = self.default_attrs
 		super().__init__(name='ADEXP')
-		super().init_backend(attrs=self.attrs,name='ADEXP')
+		super().init_backend(attrs=self._attrs,name='ADEXP')
 
 	def as_sciunit_model(self):
 		super().__init__()

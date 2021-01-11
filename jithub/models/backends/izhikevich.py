@@ -9,6 +9,7 @@ from elephant.spike_train_generation import threshold_detection
 from sciunit.models.backends import Backend
 from numba import jit
 import cython
+from sciunit.models import RunnableModel
 
 @jit(nopython=True)
 def get_vm_four(C=89.7960714285714,
@@ -170,17 +171,24 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 	return vv
 
 
-class JIT_IZHIBackend(Backend):
+class JIT_IZHIBackend(Backend,RunnableModel):
 
 	name = 'IZHI'
 	def __init__(self, attrs=None):
 		self.vM = None
-		self.attrs = attrs
+		self._attrs = None
 		self.temp_attrs = None
 		if type(attrs) is not type(None):
 			self._attrs = attrs
-		if self.attrs is None:
+		self.default_attrs = {'C':89.7960714285714,
+			'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
+			'vPeak':(86.364525297619-65.2261863636364),
+			'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
+
+		if self._attrs is None:
 			self._attrs = self.default_attrs
+		super().__init__(name='IZHI')
+		super().init_backend(attrs=self._attrs,name='IZHI')
 
 	def as_sciunit_model(self):
 		super().init_backend(attrs=self.attrs)
@@ -324,16 +332,12 @@ class JIT_IZHIBackend(Backend):
 
 	@attrs.setter
 	def attrs(self,attrs):
-		self.default_attrs = {'C':89.7960714285714,
-			'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
-			'vPeak':(86.364525297619-65.2261863636364),
-			'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
-		#print(type(self.default_attrs),type(attrs))
+
 		if attrs is not None:
 			self.default_attrs.update(attrs)
 
 		self._attrs = self.default_attrs
-		# = attrs
+
 		if hasattr(self,'model'):
 			if not hasattr(self.model,'attrs'):
 				self.model.attrs = {}
