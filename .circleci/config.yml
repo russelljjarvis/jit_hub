@@ -25,6 +25,14 @@ jobs:
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
       #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install pip --upgrade;
-      #pip install -r requirements.txt;
+      - run: pip numba
+      - run: pip neo
+      - run: pip numpy
+      - run: pip scipy
+      - run: pip cython
+      - run: pip git+https://github.com/russelljjarvis/neuronunit@optimization
+      - run: pip git+https://github.com/russelljjarvis/sciunit@dev
+
+      #- run pip install -r requirements.txt;
       - run: pip install -e .;
       - run: python unittest/basic_run.py
