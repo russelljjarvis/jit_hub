@@ -15,7 +15,6 @@ jobs:
       - run: conda config --set always_yes true
       - run: conda config --set quiet true
       - run: conda install conda-build
-      - run: which pip
       - run: conda install scipy;
       - run: conda install numpy;
       - run: conda install numba;
@@ -25,14 +24,10 @@ jobs:
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
       #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install pip --upgrade;
-      - run: pip numba
-      - run: pip neo
-      - run: pip numpy
-      - run: pip scipy
-      - run: pip cython
+      - run: pip install neo
+      - run: pip install cython
       - run: pip git+https://github.com/russelljjarvis/neuronunit@optimization
       - run: pip git+https://github.com/russelljjarvis/sciunit@dev
-
       #- run pip install -r requirements.txt;
       - run: pip install -e .;
       - run: python unittest/basic_run.py
