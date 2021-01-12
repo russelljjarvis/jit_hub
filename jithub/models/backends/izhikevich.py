@@ -171,7 +171,7 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 	return vv
 
 
-class JIT_IZHIBackend(Backend,RunnableModel):
+class JIT_IZHIBackend(Backend):
 
 	name = 'IZHI'
 	def __init__(self, attrs=None):
@@ -187,11 +187,10 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 		if self._attrs is None:
 			self._attrs = self.default_attrs
-		super().__init__(name='IZHI')
-		super().init_backend(attrs=self._attrs,name='IZHI')
 
 	def as_sciunit_model(self):
-		super().init_backend(attrs=self.attrs)
+		super().__init__(name='IZHI')
+		super().init_backend(attrs=self._attrs,name='IZHI')
 		return self
 
 
@@ -287,22 +286,11 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 		self.Iext = None
 		self.Iext = Iext
 		self.attrs['I'] = Iext
-
-
-
 		everything = copy.copy(self.attrs)
 		everything.pop('celltype',None)
-
 		everything['I'] = Iext
-
-		#everything.update({'Iext':Iext})
-		#everything.update({'start':delay_ind})
-		#everything.update({'stop':delay_ind+duration_ind})
-		#everything.update({'amp':amplitude})
-
 		if 'current_inj' in everything.keys():
 			everything.pop('current_inj',None)
-		#import pdb; pdb.set_trace()
 		self.attrs['celltype'] = round(self.attrs['celltype'])
 
 		if np.bool_(self.attrs['celltype'] <= 3):
@@ -332,11 +320,10 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 	@attrs.setter
 	def attrs(self,attrs):
-
 		if attrs is not None:
 			self.default_attrs.update(attrs)
-
-		self._attrs = self.default_attrs
+		else:
+			self._attrs = self.default_attrs
 
 		if hasattr(self,'model'):
 			if not hasattr(self.model,'attrs'):

@@ -54,7 +54,7 @@ def evaluate_vm(time_trace,
 	  vm.append(v)
 	  i+=1
   return vm,spk_cnt
-class JIT_ADEXPBackend(Backend,RunnableModel):
+class JIT_ADEXPBackend(Backend):
 
 	name = 'ADEXP'
 	def __init__(self, attrs=None):
@@ -79,11 +79,10 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 			self._attrs = attrs
 		if self._attrs is None:
 			self._attrs = self.default_attrs
-		super().__init__(name='ADEXP')
-		super().init_backend(attrs=self._attrs,name='ADEXP')
 
 	def as_sciunit_model(self):
-		super().__init__()
+		super().__init__(name='ADEXP')
+		super().init_backend(attrs=self._attrs,name='ADEXP')
 		return self
 
 
