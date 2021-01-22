@@ -54,6 +54,7 @@ class BPOModel():
         """Unset params"""
 
         for param_name in param_names:
+
             self.params[param_name].unfreeze()
 
     def instantiate(self, sim=None):
@@ -166,10 +167,11 @@ class ADEXPModel(BaseModel,BPOModel):
 
         self.default_attrs = BAE1
         if params is not None:
-            self.params = collections.OrderedDict(**params)
+            self.pre_params = collections.OrderedDict(**params)
         else:
-            self.params = self.default_attrs
-        super().__init__(name=name, attrs=self.params, backend=backend)
+            self.pre_params = self.default_attrs
+        #self.freeze(self.pre_params)
+        super().__init__(name=name, attrs=None, backend=backend)
     #def get_membrane_potential(self):
         #super().__init__(name=name, attrs=self.params, backend=backend)
     #    self._backend.get_membrane_potential()
@@ -182,10 +184,11 @@ class IzhiModel(BaseModel,BPOModel):
                               'vPeak':(86.364525297619-65.2261863636364),
                               'vr':-65.2261863636364, 'vt':-50, 'celltype':3}
         if params is not None:
-            self.params = collections.OrderedDict(**params)
+            self.pre_params = collections.OrderedDict(**params)
         else:
-            self.params = self.default_attrs
-        super().__init__(name=name, attrs=self.params, backend=backend)
+            self.pre_params = self.default_attrs
+        #self.freeze(self.pre_params)
+        super().__init__(name=name, attrs=None, backend=backend)
 
 
 
