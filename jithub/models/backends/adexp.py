@@ -10,6 +10,8 @@ import numpy as np
 from numba import jit
 from sciunit.models.backends import Backend
 from sciunit.models import RunnableModel
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, Text
+
 # code is a very aggressive hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
 @cython.boundscheck(False)
@@ -24,8 +26,14 @@ def evaluate_vm(time_trace,
 				spike_raster,
 				v_reset,
 				v_rest,
-				tau_m,tau_w,v_thresh,
-				delta_T,cm,amp,start,stop):
+				tau_m,
+				tau_w,
+				v_thresh,
+				delta_T,
+				cm,
+				amp,
+				start,
+				stop):
 
   i = 0
   spike_raster = [0 for ix in range(0,len(time_trace))]
@@ -54,7 +62,7 @@ def evaluate_vm(time_trace,
 	  vm.append(v)
 	  i+=1
   return vm,spk_cnt
-class JIT_ADEXPBackend(Backend,RunnableModel):
+class JIT_ADEXPBackend(Backend):
 
 	name = 'ADEXP'
 	def __init__(self, attrs=None):
@@ -79,11 +87,10 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 			self._attrs = attrs
 		if self._attrs is None:
 			self._attrs = self.default_attrs
-		super().__init__(name='ADEXP')
-		super().init_backend(attrs=self._attrs,name='ADEXP')
 
 	def as_sciunit_model(self):
-		super().__init__()
+		super().__init__(name='ADEXP')
+		super().init_backend(attrs=self._attrs,name='ADEXP')
 		return self
 
 
@@ -94,7 +101,17 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 		self.tstop = float(stop_time.rescale(pq.ms))
 
 
-	def simulate(self, attrs={}, T=50,dt=0.25,integration_time=30, I_ext={},spike_delta=50):
+	def simulate(self,
+				attrs={},
+				T=50,
+				dt=0.25,
+				integration_time=30,
+				I_ext={},
+				spike_delta=50)->Tuple[Any,int]:
+		'''
+		Synpopsis: simulate model
+		outputs vm and spike count
+		'''
 		spike_delta = spike_delta
 		N = 1
 		w = 1
@@ -118,10 +135,21 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 		start = I_ext['start']
 		stop = I_ext['stop']
 
-		vm,n_spikes = evaluate_vm(time_trace,dt,T,v,w,b,a,
-						  spike_delta,spike_raster,v_reset,v_rest,
-						  tau_m,tau_w,v_thresh,delta_T,cm,amp,start,stop)
-		return vm,n_spikes
+		vm,n_spikes = evaluate_vm(time_trace,
+								dt,T,v,w,b,a,
+						  		spike_delta,
+								spike_raster,
+								v_reset,
+								v_rest,
+						  		tau_m,
+								tau_w,
+								v_thresh,
+								delta_T,
+								cm,
+								amp,
+								start,
+								stop)
+		return [vm,n_spikes]
 
 
 	def get_spike_count(self):
@@ -194,8 +222,7 @@ class JIT_ADEXPBackend(Backend,RunnableModel):
 Too hard
 from numba import vectorize
 def eval_model_collection(list_of_param_dicts):
-	@vectorize(['float32(float32, float32)',
-	            'float64(float64, float64)'],target='cpu')
+	@guvectorize([(int64[:], int64[:])], '(n)->(n)')
 	def evaluate_vm_collection(time_trace,
 					dt,
 					T,

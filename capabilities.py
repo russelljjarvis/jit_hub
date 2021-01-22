@@ -90,7 +90,6 @@ class ReceivesCurrent(ReceivesSquareCurrent):
         This describes the current to be injected.
         """
         try:
-            #print(kwargs)
             self._backend.inject_square_current(**kwargs)
         except AttributeError:
             raise NotImplementedError()
