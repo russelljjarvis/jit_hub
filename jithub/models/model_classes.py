@@ -5,11 +5,14 @@ from .backends.adexp import JIT_ADEXPBackend
 
 from copy import copy
 import collections
+import quantities as pq
+from sciunit import capabilities as scap
+from neuronunit import capabilities as ncap
 
+#(<class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>, <class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>)
+#(<class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>, <class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>)
 
-class BPOModel():
-    #def get_membrane_potential(self):
-    #    self._backend.get_membrane_potential()
+class BPOModel(ncap.ProducesMembranePotential,scap.Runnable):
 
     def check_name(self):
         """Check if name complies with requirements"""
@@ -35,6 +38,38 @@ class BPOModel():
         """Get parameter objects by name"""
 
         return [self.params[param_name] for param_name in param_names]
+
+    def get_AP_widths(self):
+        from neuronunit.capabilities import spike_functions as sf
+        vm = self.get_membrane_potential()
+        widths = sf.spikes2widths(vm)
+        return widths
+
+    def inject_model(self,
+                     DELAY=1000.0*pq.ms,
+                     DURATION=2000.0*pq.ms):
+        from neuronunit.optimization import optimization_management
+        dynamic_attrs = {str(k):float(v) for k,v in self.params.items()}
+        frozen_attrs = self.default_attrs
+        frozen_attrs.update(dynamic_attrs)
+        all_attrs = frozen_attrs
+        dtc = self.model_to_dtc(attrs=all_attrs)
+        assert len(dtc.attrs)
+        dtc = dtc_to_rheo(dtc)
+        self.rheobase = dtc.rheobase
+        vm = [np.nan]
+        if self.rheobase is not None:
+            uc = {'amplitude':self.rheobase,'duration':DURATION,'delay':DELAY}
+            self._backend.attrs = all_attrs
+            try:
+                self._backend.inject_square_current(uc)
+                vm = self.get_membrane_potential()
+                self.vm = vm
+            except:
+                vm = [np.nan]
+        else:
+            self.vm = vm
+        return vm
 
     def freeze(self, param_dict):
         """Set params"""

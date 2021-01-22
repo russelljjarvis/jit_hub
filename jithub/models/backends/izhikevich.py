@@ -171,7 +171,7 @@ def get_2003_vm(I,times,a=0.01, b=15, c=-60, d=10,vr = -70):
 	return vv
 
 
-class JIT_IZHIBackend(Backend):
+class JIT_IZHIBackend(Backend,RunnableModel):
 
 	name = 'IZHI'
 	def __init__(self, attrs=None):
@@ -188,10 +188,10 @@ class JIT_IZHIBackend(Backend):
 		if self._attrs is None:
 			self._attrs = self.default_attrs
 
-	def as_sciunit_model(self):
+		#def as_sciunit_model(self):
 		super().__init__(name='IZHI')
 		super().init_backend(attrs=self._attrs,name='IZHI')
-		return self
+		#return self
 
 
 
