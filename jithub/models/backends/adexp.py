@@ -180,19 +180,18 @@ class JIT_ADEXPBackend(Backend):
 		stopTimeMs: duration in milliseconds
 		"""
 		self.tstop = float(stop_time.rescale(pq.ms))
-	def inject_square_current(self,amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms):#, section = None, debug=False):
+	def inject_square_current(self,amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=342.85*pq.ms):
 		"""Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
 		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
 		where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
 		Description: A parameterized means of applying current injection into defined
 		Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
 		"""
-		#self.set_attrs(self.attrs)
-		#temp_attrs =  self._attrs
+		padding = float(padding)
 		amplitude = float(amplitude.magnitude)
 		duration = float(duration)
 		delay = float(delay)
-		tMax = delay + duration# + 200.0
+		tMax = delay + duration + padding
 
 		self.set_stop_time(stop_time = tMax*pq.ms)
 		tMax = float(self.tstop)
