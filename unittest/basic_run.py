@@ -10,6 +10,7 @@ for cellmodel in cellmodels:
         model = model_classes.MATModel()
     if cellmodel == "ADEXP":
         model = model_classes.ADEXPModel()
+    print(cellmodel)
     ALLEN_DELAY = 1000.0 * pq.ms
     ALLEN_DURATION = 2000.0 * pq.ms
     uc = {
@@ -19,4 +20,7 @@ for cellmodel in cellmodels:
     }
     model.inject_square_current(**uc)
     vm = model.get_membrane_potential()
-    assert vm.times[-1] == ALLEN_DELAY + ALLEN_DURATION
+    try:
+        assert vm.times[-1] == ALLEN_DELAY + ALLEN_DURATION
+    except:
+        print(vm.times[-1],ALLEN_DELAY + ALLEN_DURATION)
