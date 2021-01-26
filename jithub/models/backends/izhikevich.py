@@ -131,7 +131,6 @@ def get_vm_one_two_three(C=89.7960714285714,
 		 a=0.01, b=15, c=-60, d=10, k=1.6,
 		 vPeak=(86.364525297619-65.2261863636364),
 		  vr=-65.2261863636364, vt=-50,I=[]):
-		  #N=0,start=0,stop=0,amp=0,ramp=None,pulse=None):
 	tau= dt = 0.25; #dt
 	N = len(I)
 	v = vr*np.ones(N)
@@ -141,7 +140,6 @@ def get_vm_one_two_three(C=89.7960714285714,
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
-		#u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
 
 		if v[i+1]>=vPeak:
 			v[i]=vPeak
@@ -188,10 +186,8 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 		if self._attrs is None:
 			self._attrs = self.default_attrs
 
-		#def as_sciunit_model(self):
 		super().__init__(name='IZHI')
 		super().init_backend(attrs=self._attrs,name='IZHI')
-		#return self
 
 
 
@@ -247,7 +243,7 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms):
+	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=342.85*pq.ms):
 		"""
 		Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
 		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
@@ -267,14 +263,17 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 		if isinstance(amplitude,type(dict())):
 			c = amplitude
 			amplitude = float(c['amplitude'].simplified)
-			duration = float(c['duration'])#.simplified)
-			delay = float(c['delay'])#.simplified)
-
+			duration = float(c['duration'])
+			delay = float(c['delay'])
+			if 'padding' in c.keys():
+				padding = float(c['padding'])
 		amplitude = float(amplitude)
 		duration = float(duration)
 		delay = float(delay)
-		tMax = delay + duration
-		tMax = self.tstop = float(tMax)
+		padding = float(padding)
+		tMax = delay + duration + padding
+
+		tMax = float(tMax)
 		N = int(tMax/0.25)
 		Iext = np.zeros(N)
 		delay_ind = int((delay/tMax)*N)
