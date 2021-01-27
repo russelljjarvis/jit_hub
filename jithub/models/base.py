@@ -46,8 +46,9 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
         return self.vM
 
 
-    #def set_attrs(self, attrs):
-    #    self.attrs = attrs
+    def set_attrs(self, attrs):
+        self.attrs = attrs
+        self._backend.attrs = attrs
 
     '''
     def step(amplitude, t_stop):
