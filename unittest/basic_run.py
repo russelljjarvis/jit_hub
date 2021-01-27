@@ -10,9 +10,6 @@ import collections
 import quantities as pq
 import time
 
-
-
-
 DELAY = 0*pq.ms
 DURATION = 250 *pq.ms
 
@@ -70,7 +67,9 @@ params['amplitude'] = 500*pq.pA
 params['delay'] = DELAY
 params['duration'] = 600*pq.ms
 
-
+model = model_classes.ADEXPModel()
+model.set_attrs({'b':reduced_cells['RS']['b']})
+assert model._backend.attrs['b'] == reduced_cells['RS']['b']
 for i,amp in enumerate(IinRange):
 
     model = model_classes.IzhiModel()
