@@ -22,7 +22,7 @@ def get_vm_four(C=89.7960714285714,
 	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
-	for i in range(N-1):
+	for i in range(N):
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 		u[i+1] = u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
@@ -47,11 +47,10 @@ def get_vm_five(C=89.7960714285714,
 	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
-	for i in range(N-1):
+	for i in range(N):
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 
-		#u[i+1]=u[i]+tau*a*(b*(v[i]-vr)-u[i]); # Calculate recovery variable
 		if v[i+1] < d:
 			u[i+1] = u[i] + tau*a*(0-u[i])
 		else:
@@ -77,7 +76,7 @@ def get_vm_six(C=89.7960714285714,
 	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
-	for i in range(N-1):
+	for i in range(N):
 	   # forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
 
@@ -105,7 +104,7 @@ def get_vm_seven(C=89.7960714285714,
 	v = vr*np.ones(N)
 	u = np.zeros(N)
 	v[0] = vr
-	for i in range(N-1):
+	for i in range(N):
 
 		# forward Euler method
 		v[i+1] = v[i] + tau * (k * (v[i] - vr) * (v[i] - vt) - u[i] + I[i]) / C
@@ -188,7 +187,7 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 		super().__init__(name='IZHI')
 		super().init_backend(attrs=self._attrs,name='IZHI')
-
+		self.spikes = 0
 
 
 	def set_stop_time(self, stop_time = 650*pq.ms):
@@ -243,7 +242,7 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=342.85*pq.ms):
+	def inject_square_current(self, amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=0*pq.ms):
 		"""
 		Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
 		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
@@ -258,22 +257,24 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 			attrs = self.model.default_attrs
 
 		self.attrs = attrs
+		'''
 		square = True
 
 		if isinstance(amplitude,type(dict())):
 			c = amplitude
-			amplitude = float(c['amplitude'].simplified)
+			amplitude = float(c['amplitude'])
 			duration = float(c['duration'])
 			delay = float(c['delay'])
 			if 'padding' in c.keys():
 				padding = float(c['padding'])
+		'''
 		amplitude = float(amplitude)
 		duration = float(duration)
 		delay = float(delay)
 		padding = float(padding)
 		tMax = delay + duration + padding
 
-		tMax = float(tMax)
+		tMax = self.tstop = float(tMax)
 		N = int(tMax/0.25)
 		Iext = np.zeros(N)
 		delay_ind = int((delay/tMax)*N)
@@ -310,7 +311,12 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 		self.vM = AnalogSignal(v,
 							units=pq.mV,
 							sampling_period=0.25*pq.ms)
+							#sampling_rate=(1.0/(0.00025))*pq.Hz)
+
 		self.attrs.pop('I',None)
+		if float(self.vM.times[-1])!=float(delay)+float(duration)+float(padding):
+			extra_part = float(self.vM.times[-1]) - (float(delay)+float(duration)+float(padding))
+			#print(extra_part)
 		return self.vM
 
 	@property
@@ -348,6 +354,7 @@ class JIT_IZHIBackend(Backend,RunnableModel):
 
 	def get_spike_count(self):
 		thresh = threshold_detection(self.vM,0*pq.mV)
+		self.spikes = len(thresh)
 		return len(thresh)
 
 	@cython.boundscheck(False)

@@ -3,6 +3,7 @@ from jithub.models import model_classes
 import quantities as pq
 cellmodels = ["IZHI","MAT","ADEXP"]
 import unittest
+import numpy as np
 for cellmodel in cellmodels:
     if cellmodel == "IZHI":
         model = model_classes.IzhiModel()
@@ -21,6 +22,7 @@ for cellmodel in cellmodels:
     model.inject_square_current(**uc)
     vm = model.get_membrane_potential()
     try:
-        assert vm.times[-1] == ALLEN_DELAY + ALLEN_DURATION
+        assert float(int(np.round(vm.times[-1],0))) == float(ALLEN_DELAY) + float(ALLEN_DURATION)
     except:
-        print(vm.times[-1],ALLEN_DELAY + ALLEN_DURATION)
+        print(float(int(np.round(vm.times[-1],0))) == float(ALLEN_DELAY) + float(ALLEN_DURATION))
+    #    print(vm.times[-1],ALLEN_DELAY + ALLEN_DURATION)

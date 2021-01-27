@@ -180,7 +180,7 @@ class JIT_ADEXPBackend(Backend):
 		stopTimeMs: duration in milliseconds
 		"""
 		self.tstop = float(stop_time.rescale(pq.ms))
-	def inject_square_current(self,amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=342.85*pq.ms):
+	def inject_square_current(self,amplitude=100*pq.pA, delay=10*pq.ms, duration=500*pq.ms,padding=0*pq.ms):
 		"""Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
 		Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
 		where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
