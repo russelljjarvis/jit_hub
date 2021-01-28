@@ -9,9 +9,6 @@ import quantities as pq
 from sciunit import capabilities as scap
 from neuronunit import capabilities as ncap
 
-#(<class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>, <class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>)
-#(<class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>, <class 'sciunit.capabilities.Runnable'>, <class 'neuronunit.capabilities.ProducesMembranePotential'>)
-
 class BPOModel(ncap.ProducesMembranePotential,scap.Runnable):
 
     def check_name(self):

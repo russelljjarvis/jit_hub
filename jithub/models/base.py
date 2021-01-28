@@ -31,7 +31,17 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
     def get_spike_count(self):
         self.vM = self._backend.get_membrane_potential()
         thresh = threshold_detection(self.vM,0*qt.mV)
-        return len(thresh)
+        ##
+        # Reasoning for condition:
+        # humans think spikes have down strokes in addition
+        # to the upstroke, but only upstrokes are
+        # detected by threshold_detection
+        ##
+        if self.vM[-1]>0:
+            spikes = len(thresh) -1
+        else:
+            spikes = len(thresh)
+        return spikes
 
 
     def set_stop_time(self, stop_time = 650*pq.ms):
