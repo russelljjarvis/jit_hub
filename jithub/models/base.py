@@ -41,7 +41,8 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
             spikes = len(thresh) -1
         else:
             spikes = len(thresh)
-        return spikes
+            
+        return len(thresh)
 
 
     def set_stop_time(self, stop_time = 650*pq.ms):
