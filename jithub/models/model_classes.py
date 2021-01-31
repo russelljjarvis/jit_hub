@@ -14,13 +14,15 @@ class BPOModel(CellModel,ncap.ProducesMembranePotential,scap.Runnable):
     def __init__(self):
         self.name = "neuronunit_numba_model"
         super(BPOModel, self).__init__(self.name)
+        """
+        TODO
         # Force garbage collection of NEURON/HOC specific code
         # in case its resource intensive.
         #del self.create_hoc
         #del self.create_empty_cell
         #del self.destroy
         #del self.instantiate
-
+        """
     def get_AP_widths(self):
         from neuronunit.capabilities import spike_functions as sf
         vm = self.get_membrane_potential()
@@ -161,10 +163,7 @@ class ADEXPModel(BaseModel,BPOModel):
         else:
             self.params = self.default_attrs
         super().__init__(name=name, attrs=self.params, backend=backend)
-    #def get_membrane_potential(self):
-        #super().__init__(name=name, attrs=self.params, backend=backend)
-    #    self._backend.get_membrane_potential()
-        #print('gets here')
+
 
 class IzhiModel(BaseModel,BPOModel):
     def __init__(self, name=None, params=None, backend=JIT_IZHIBackend):
