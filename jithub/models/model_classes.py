@@ -1,4 +1,4 @@
-from .base import BaseModel
+#from .base import BaseModel
 from .backends.izhikevich import JIT_IZHIBackend
 from .backends.mat_nu import JIT_MATBackend
 from .backends.adexp import JIT_ADEXPBackend
@@ -10,48 +10,23 @@ from sciunit import capabilities as scap
 from neuronunit import capabilities as ncap
 
 from bluepyopt.ephys.models import CellModel
-class BPOModel(CellModel,ncap.ProducesMembranePotential,scap.Runnable):
-    def __init__(self):
+from neuronunit.optimization.data_transport_container import DataTC
+
+class BPOModel(CellModel,ncap.ReceivesSquareCurrent,ncap.ProducesMembranePotential,scap.Runnable):
+    def __init__(self,name,attrs={}):
+        self.mechanisms = None
+        self.morphology = None
         self.name = "neuronunit_numba_model"
-        super(BPOModel, self).__init__(self.name)
-        # Force garbage collection of NEURON/HOC specific code
-        # in case its resource intensive.
-        #del self.create_hoc
-        #del self.create_empty_cell
-        #del self.destroy
-        #del self.instantiate
+        self.attrs = attrs
+        self.jithub = True
+    def get_backend(self):
+        return self.backend
 
     def get_AP_widths(self):
         from neuronunit.capabilities import spike_functions as sf
         vm = self.get_membrane_potential()
         widths = sf.spikes2widths(vm)
         return widths
-
-    def inject_model(self,
-                     DELAY=1000.0*pq.ms,
-                     DURATION=2000.0*pq.ms):
-        from neuronunit.optimization import optimization_management
-        dynamic_attrs = {str(k):float(v) for k,v in self.params.items()}
-        frozen_attrs = self.default_attrs
-        frozen_attrs.update(dynamic_attrs)
-        all_attrs = frozen_attrs
-        dtc = self.model_to_dtc(attrs=all_attrs)
-        assert len(dtc.attrs)
-        dtc = dtc_to_rheo(dtc)
-        self.rheobase = dtc.rheobase
-        vm = [np.nan]
-        if self.rheobase is not None:
-            uc = {'amplitude':self.rheobase,'duration':DURATION,'delay':DELAY}
-            self._backend.attrs = all_attrs
-            try:
-                self._backend.inject_square_current(uc)
-                vm = self.get_membrane_potential()
-                self.vm = vm
-            except:
-                vm = [np.nan]
-        else:
-            self.vm = vm
-        return vm
 
     def freeze(self, param_dict):
         """
@@ -140,9 +115,9 @@ class BPOModel(CellModel,ncap.ProducesMembranePotential,scap.Runnable):
                     param_name)
 
 
-
-class ADEXPModel(BaseModel,BPOModel):
-    def __init__(self, name=None, params=None, backend=JIT_ADEXPBackend):
+from sciunit.models import RunnableModel
+class ADEXPModel(JIT_ADEXPBackend,BPOModel,DataTC,RunnableModel):
+    def __init__(self, name="not_None", params=None):
         self.default_attrs = {}
         self.default_attrs['cm']=0.281
         self.default_attrs['v_spike']=-40.0
@@ -160,13 +135,17 @@ class ADEXPModel(BaseModel,BPOModel):
             self.params = collections.OrderedDict(**params)
         else:
             self.params = self.default_attrs
-        super().__init__(name=name, attrs=self.params, backend=backend)
-    #def get_membrane_potential(self):
-        #super().__init__(name=name, attrs=self.params, backend=backend)
-    #    self._backend.get_membrane_potential()
-        #print('gets here')
+        self._attrs = self.params
+        BPOModel.__init__(self,name)
+        DataTC.__init__(self,attrs=self.params,backend=self)
+        RunnableModel._backend = JIT_ADEXPBackend
+        self.morphology = None
+        RunnableModel.morphology = None
+        RunnableModel.mechanisms = None
+        self.ampl = 0
+        self._attrs = self.params
 
-class IzhiModel(BaseModel,BPOModel):
+class IzhiModel(JIT_IZHIBackend,BPOModel,DataTC,RunnableModel):
     def __init__(self, name=None, params=None, backend=JIT_IZHIBackend):
         self.default_attrs = {'C':89.7960714285714,
                               'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
@@ -176,11 +155,19 @@ class IzhiModel(BaseModel,BPOModel):
             self.params = collections.OrderedDict(**params)
         else:
             self.params = self.default_attrs
-        super().__init__(name=name, attrs=self.params, backend=backend)
+        BPOModel.__init__(self,name)
+        DataTC.__init__(self,attrs=self.params,backend=self)
+        RunnableModel._backend = JIT_IZHIBackend
+        self.morphology = None
+        RunnableModel.morphology = None
+        RunnableModel.mechanisms = None
+
+        self.ampl = 0
+        self._attrs = self.params
 
 
 
-class MATModel(BaseModel,BPOModel):
+class MATModel(BPOModel):
     def __init__(self, name=None, attrs=None, backend=JIT_MATBackend):
         self.default_attrs = {'vr':-65.0,'vt':-55.0,'a1':10, 'a2':2, 'b':0, 'w':5, 'R':10, 'tm':10, 't1':10, 't2':200, 'tv':5, 'tref':2}
         if attrs is None:

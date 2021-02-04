@@ -9,14 +9,16 @@ import quantities as pq
 import numpy
 import copy
 from elephant.spike_train_generation import threshold_detection
-from capabilities import ProducesMembranePotential, ReceivesCurrent
+#from capabilities import ProducesMembranePotential, ReceivesCurrent
 
+from bluepyopt.parameters import Parameter
 
 class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
     name = None
 
-    def __init__(self, name=None, attrs=None, backend=None):
-        super().__init__(name=name, attrs=attrs, backend=backend)
+    def __init__(self, name, attrs=None, backend=None):
+        self.name = name
+        super(BaseModel,self).__init__(self.name,attrs=attrs,backend=backend)
         self.vM = None
         self.attrs = attrs
         self.temp_attrs = None
@@ -41,7 +43,7 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
             spikes = len(thresh) -1
         else:
             spikes = len(thresh)
-            
+
         return len(thresh)
 
 
