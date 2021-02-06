@@ -1,13 +1,13 @@
-from quantities import mV, ms, s, V
+#from quantities import mV, ms, s, V
 from neo import AnalogSignal
 import numpy as np
 import quantities as pq
 import numpy
 
-voltage_units = mV
+#voltage_units = mV
 import cython
 from elephant.spike_train_generation import threshold_detection
-import numpy as np
+#import numpy as np
 from numba import jit
 from sciunit.models.backends import Backend
 from sciunit.models import RunnableModel
@@ -69,18 +69,71 @@ def evaluate_vm(
         i += 1
     return vm, spk_cnt
 
+from numba import float64, float32, guvectorize
+@guvectorize([(float32[:],float32[:])], '(n)->(n)', nopython=True, target="cpu")
+def evaluate_vm_collection(arr,vm):
+    cm = arr[0]
+    factored_out = arr[1]
+    v_reset = arr[2]
+    v = v_rest = arr[3]
+    tau_m = arr[4]
+    a = arr[5]
+    b = arr[6]
+    delta_T = arr[7]
+    tau_w = arr[8]
+    v_thresh = arr[9]
+    spike_delta = arr[10]
+    dt = arr[11]
+    start = arr[12]
+    stop = arr[13]
+    amp = arr[14]
+    padding = arr[15]
+    tMax = start + stop + padding
+    time_trace = np.arange(0, int(tMax+dt), dt)
+    spike_raster = np.zeros(len(time_trace))
+    len_time_trace = len(time_trace)
+    sim_len = int(len(time_trace))-1
+    arr_cnt = 0
+    w = 1
+    #result = vm = np.ones(len(time_trace))*v_rest
+    spk_cnt = 0
+    for t_ind in range(0, len_time_trace-1):
+        t = time_trace[t_ind]
+        I_scalar = 0
+        if start <= t <= stop:
+            I_scalar = amp
+
+        if spike_raster[t_ind]:
+            v = v_reset
+            w += b
+        dv = (
+            ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T))
+            / tau_m
+            + (I_scalar - w) / cm
+        ) * dt
+        v += dv
+        w += dt * (a * (v - v_rest) - w) / tau_w * dt
+        if v > v_thresh:
+            v = spike_delta
+            spike_raster[t_ind] = 1
+
+            spk_cnt += 1
+        else:
+            spike_raster[t_ind] = 0
+        vm[t_ind] = v
+    #vm
+    #print(np.max(result),np.min(result))
+
 
 class JIT_ADEXPBackend():
     name = "ADEXP"
 
     def __init__(self, attrs={}):
-        print('gets here')
-        #super(JIT_ADEXPBackend,self).init_backend()
         self.vM = None
         self._attrs = attrs
         self.default_attrs = {}
         self.default_attrs["cm"] = 2.81
-        self.default_attrs["v_spike"] = -40.0
+        #self.default_attrs["v_spike"] = -40.0
         self.default_attrs["v_reset"] = -70.6
         self.default_attrs["v_rest"] = -70.6
         self.default_attrs["tau_m"] = 9.3667
@@ -98,10 +151,6 @@ class JIT_ADEXPBackend():
             self._attrs = self.default_attrs
         self._vec_attrs = []
 
-    # def as_sciunit_model(self):
-    #    super().__init__(name="ADEXP")
-    #    super().init_backend(attrs=self._attrs, name="ADEXP")
-    #    return self
 
     def set_stop_time(self, stop_time=650 * pq.ms):
         """Sets the simulation duration
@@ -110,7 +159,7 @@ class JIT_ADEXPBackend():
         self.tstop = float(stop_time.rescale(pq.ms))
 
     def simulate(
-        self, attrs={}, T=50, dt=0.25, integration_time=30, I_ext={}, spike_delta=50
+        self, attrs={}, T=50, dt=0.25, I_ext={}, spike_delta=50
     ) -> Tuple[Any, int]:
         """
         -- Synpopsis: simulate model
@@ -118,8 +167,7 @@ class JIT_ADEXPBackend():
         """
         N = 1
         w = 1
-        dt = dt
-        time_trace = np.arange(0, T + dt, dt)
+        time_trace = np.arange(0, T, dt)
         len_time_trace = len(time_trace)
         spike_raster = np.zeros((1, len_time_trace))
         v_rest = attrs["v_rest"]
@@ -168,7 +216,6 @@ class JIT_ADEXPBackend():
 
     @attrs.setter
     def attrs(self, attrs):
-        #print(type(attrs),type(self.default_attrs))
         self.default_attrs.update(attrs)
         attrs = self.default_attrs
         self._attrs = attrs
@@ -176,6 +223,9 @@ class JIT_ADEXPBackend():
             if not hasattr(self.model, "attrs"):
                 self.model.attrs = {}
                 self.model.attrs.update(attrs)
+
+    def set_attrs(self,attrs):
+        self.attrs = attrs
 
     def get_membrane_potential(self):
         """Must return a neo.core.AnalogSignal."""
@@ -195,6 +245,7 @@ class JIT_ADEXPBackend():
         delay=10 * pq.ms,
         duration=500 * pq.ms,
         padding=0 * pq.ms,
+        dt = 0.25
     ) ->AnalogSignal:
         """Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
         Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
@@ -213,8 +264,8 @@ class JIT_ADEXPBackend():
 
         stim = {"start": delay, "stop": duration + delay, "pA": amplitude}
 
-        vm, n_spikes = self.simulate(attrs=self.attrs, T=tMax, dt=0.25, I_ext=stim)
-        vM = AnalogSignal(vm, units=voltage_units, sampling_period=0.25 * pq.ms)
+        vm, n_spikes = self.simulate(attrs=self.attrs, T=tMax, dt=self.attrs['dt'], I_ext=stim)
+        vM = AnalogSignal(vm, units=pq.mV, sampling_period=self.attrs['dt'] * pq.ms)
 
         self.vM = vM
         self.n_spikes = n_spikes
@@ -237,71 +288,12 @@ class JIT_ADEXPBackend():
         self._vec_attrs = to_set_vec_attrs
         # stores parameters for a list of models.
 
-    # Too hard
-    from numba import vectorize
-
-    def inject_square_current_vectorized(self, list_of_param_dicts):
-        # @guvectorize([(int64[:], int64[:])], '(n)->(n)')
-        # npoints = int(1e7)
-        # a = np.arange(npoints,dtype=np.float32)
-
-        def evaluate_vm_collection(arrays):
-            npoints = len(arrays)
-            T = 10000
-
-            vm_returns = np.zeros( (npoints, T), dtype=np.float32 )
-            #np.arange(npoints, dtype=np.float32)
-            arr_cnt = 0
-            dt = 1
-            time_trace = np.arange(0, T + dt, dt)
-            # len_time_trace = len(time_trace)
-            # spike_raster = np.zeros((1, len_time_trace))
-
-            for arr in arrays:
-                w = arr[0]
-                b = arr[1]
-                a = arr[2]
-                spike_delta = arr[3]
-                v_reset = arr[4]
-                v = v_rest = arr[5]
-                tau_m = arr[6]
-                tau_w = arr[7]
-                v_thresh = arr[8]
-                delta_T = arr[9]
-                cm = arr[10]
-                amp = arr[11]
-                start = arr[12]
-                stop = arr[13]
-                i = 0
-                # spike_raster = [0 for ix in range(0, len(time_trace))]
-                vm = []
-                spk_cnt = 0
-                for t_ind in range(0, len(time_trace)-1):
-                    t = time_trace[t_ind]
-                    I_scalar = 0
-                    if start <= t <= stop:
-                        I_scalar = amp
-                    # if spike_raster[i - 1]:
-                    #    v = v_reset
-                    #    w += b
-                    dv = (
-                        ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T))
-                        / tau_m
-                        + (I_scalar - w) / cm
-                    ) * dt
-                    v += dv
-                    w += dt * (a * (v - v_rest) - w) / tau_w * dt
-                    if v > v_thresh:
-                        v = spike_delta
-                        # spike_raster[i] = 1
-                        spk_cnt += 1
-                    else:
-                        pass
-                        # spike_raster[i] = 0
-                    vm.append(v)
-                    i += 1
-                vm_returns[arr_cnt] = vm
-                arr_cnt += 1
-            return vm_returns
-        vm_returns = evaluate_vm_collection(list_of_param_dicts)
-        return vm_returns
+    def inject_square_current_vectorized(self, list_of_param_arrays):
+        #print(list_of_param_arrays[0])
+        v_rest = list_of_param_arrays[3]
+        vm = np.ones(len(time_trace))*v_rest
+        vm_returned = evaluate_vm_collection(list_of_param_arrays[0],vm)
+        #print(list_of_param_arrays[0])
+        print(vm_returned)
+        print(evaluate_vm_collection.types)
+        return vm_returned
