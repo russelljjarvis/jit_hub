@@ -69,12 +69,12 @@ params['duration'] = 600*pq.ms
 
 model = model_classes.ADEXPModel()
 model.set_attrs({'b':reduced_cells['RS']['b']})
-assert model._backend.attrs['b'] == reduced_cells['RS']['b']
+assert model.attrs['b'] == reduced_cells['RS']['b']
 for i,amp in enumerate(IinRange):
 
     model = model_classes.IzhiModel()
     model.set_attrs(reduced_cells['RS'])
-    assert model._backend.attrs['a'] == reduced_cells['RS']['a']
+    assert model.attrs['a'] == reduced_cells['RS']['a']
     params['amplitude'] = amp*pq.pA
 
     t1 = time.time()
@@ -100,7 +100,7 @@ for i,amp in enumerate(IinRange):
     model = model_classes.IzhiModel()
 
     model.set_attrs(reduced_cells['IB'])
-    assert model._backend.attrs['a'] == reduced_cells['IB']['a']
+    assert model.attrs['a'] == reduced_cells['IB']['a']
 
     params['amplitude'] = amp
 
