@@ -263,9 +263,12 @@ class JIT_ADEXPBackend():
         tMax = float(self.tstop)
 
         stim = {"start": delay, "stop": duration + delay, "pA": amplitude}
-
-        vm, n_spikes = self.simulate(attrs=self.attrs, T=tMax, dt=self.attrs['dt'], I_ext=stim)
-        vM = AnalogSignal(vm, units=pq.mV, sampling_period=self.attrs['dt'] * pq.ms)
+        if 'dt' in self.attrs:
+            self.attrs['dt']
+        else:
+            dt = 0.1
+        vm, n_spikes = self.simulate(attrs=self.attrs, T=tMax, dt=dt, I_ext=stim)
+        vM = AnalogSignal(vm, units=pq.mV, sampling_period=dt* pq.ms)
 
         self.vM = vM
         self.n_spikes = n_spikes
@@ -288,11 +291,18 @@ class JIT_ADEXPBackend():
         self._vec_attrs = to_set_vec_attrs
         # stores parameters for a list of models.
 
-    def inject_square_current_vectorized(self, list_of_param_arrays):
+    def inject_square_current_vectorized(self, arr):
         #print(list_of_param_arrays[0])
-        v_rest = list_of_param_arrays[3]
+        v_rest = arr[0][3]
+        dt = arr[0][11]
+        start = arr[0][12]
+        stop = arr[0][13]
+        amp = arr[0][14]
+        padding = arr[0][15]
+        tMax = start + stop + padding
+        time_trace = np.arange(0, int(tMax+dt), dt)
         vm = np.ones(len(time_trace))*v_rest
-        vm_returned = evaluate_vm_collection(list_of_param_arrays[0],vm)
+        vm_returned = evaluate_vm_collection(arr[0],vm)
         #print(list_of_param_arrays[0])
         print(vm_returned)
         print(evaluate_vm_collection.types)
