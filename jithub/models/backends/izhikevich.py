@@ -147,26 +147,35 @@ class JIT_IZHIBackend(Backend, RunnableModel):
         I[delay_ind + duration_ind : :] = 0.0
         self.I = I
         self.attrs["I"] = I
+
         self.attrs["celltype"] = round(self.attrs["celltype"])
-        celltype = self.attrs["celltype"]
+        celltype = copy.copy(self.attrs["celltype"])
         if np.bool_(self.attrs["celltype"] <= 3):
             self.attrs.pop("celltype", None)
             v = get_vm_one_two_three(**self.attrs)
+            self.attrs["celltype"] = celltype
+
         else:
 
             if np.bool_(self.attrs["celltype"] == 4):
                 self.attrs.pop("celltype", None)
                 v = get_vm_four(**self.attrs)
+                self.attrs["celltype"] = celltype
+
             if np.bool_(self.attrs["celltype"] == 5):
                 self.attrs.pop("celltype", None)
                 v = get_vm_five(**self.attrs)
+                self.attrs["celltype"] = celltype
+
             if np.bool_(self.attrs["celltype"] == 6):
                 self.attrs.pop("celltype", None)
                 v = get_vm_six(**self.attrs)
+                self.attrs["celltype"] = celltype
+
             if np.bool_(self.attrs["celltype"] == 7):
                 self.attrs.pop("celltype", None)
                 v = get_vm_seven(**self.attrs)
-        self.attrs["celltype"] = celltype
+                self.attrs["celltype"] = celltype
         self.vM = AnalogSignal(v, units=pq.mV, sampling_period=self.attrs['dt'] * pq.ms)
         self.attrs.pop("I", None)
         #if float(self.vM.times[-1]) != float(delay) + float(duration) + float(padding):

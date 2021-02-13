@@ -1,4 +1,5 @@
 from numba import jit
+import numpy as np
 @jit(nopython=True)
 def get_vm_four(
     C=89.7960714285714,
@@ -11,8 +12,9 @@ def get_vm_four(
     vr=-65.2261863636364,
     vt=-50,
     I=[],
+    dt = 0.25
 ):
-    tau = dt = 0.25
+    tau = dt
     N = len(I)
 
     v = vr * np.ones(N)
@@ -48,10 +50,11 @@ def get_vm_five(
     vr=-65.2261863636364,
     vt=-50,
     I=[],
+    dt = 0.25
 ):
     N = len(I)
 
-    tau = dt = 0.25
+    tau = dt
     # dt
     v = vr * np.ones(N)
     u = np.zeros(N)
@@ -84,8 +87,9 @@ def get_vm_six(
     vr=-65.2261863636364,
     vt=-50,
     I=[],
+    dt = 0.25
 ):
-    tau = dt = 0.25
+    tau = dt
     # dt
     N = len(I)
 
@@ -123,8 +127,9 @@ def get_vm_seven(
     vr=-65.2261863636364,
     vt=-50,
     I=[],
+    dt = 0.25
 ):
-    tau = dt = 0.25
+    tau = dt
     # dt
     N = len(I)
     v = vr * np.ones(N)
