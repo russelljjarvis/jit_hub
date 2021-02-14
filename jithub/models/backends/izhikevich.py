@@ -65,6 +65,7 @@ class JIT_IZHIBackend(Backend, RunnableModel):
             "vr": -65.2,
             "vt": -50,
             "celltype": 3,
+            "dt":0.25
         }
         self.sim_param = {}
 

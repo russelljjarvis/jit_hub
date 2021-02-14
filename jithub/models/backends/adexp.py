@@ -1,22 +1,19 @@
-#from quantities import mV, ms, s, V
 from neo import AnalogSignal
 import numpy as np
 import quantities as pq
 import numpy
-
-#voltage_units = mV
 import cython
 from elephant.spike_train_generation import threshold_detection
-#import numpy as np
 from numba import jit
 from sciunit.models.backends import Backend
 from sciunit.models import RunnableModel
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, Text
+from numba import float64, float32, guvectorize
 
 # code is a very aggressive hack on this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
-@cython.boundscheck(False)
-@cython.wraparound(False)
+#@cython.boundscheck(False)
+#@cython.wraparound(False)
 @jit(nopython=True)
 def evaluate_vm(
     time_trace,
@@ -69,7 +66,6 @@ def evaluate_vm(
         i += 1
     return vm, spk_cnt
 
-from numba import float64, float32, guvectorize
 @guvectorize([(float32[:],float32[:])], '(n)->(n)', nopython=True, target="cpu")
 def evaluate_vm_collection(arr,vm):
     cm = arr[0]
@@ -143,7 +139,8 @@ class JIT_ADEXPBackend():
         self.default_attrs["tau_w"] = 144.0
         self.default_attrs["v_thresh"] = -50.4
         self.default_attrs["spike_delta"] = 30
-        #self.default_attrs = BAE1
+        self.default_attrs["dt"] = 0.25
+
 
         if type(attrs) is not type(None):
             self._attrs = attrs
@@ -236,8 +233,6 @@ class JIT_ADEXPBackend():
         stopTimeMs: duration in milliseconds
         """
         self.tstop = float(stop_time.rescale(pq.ms))
-    #def load_model(self) -> None:
-    #    self
 
     def inject_square_current(
         self,
