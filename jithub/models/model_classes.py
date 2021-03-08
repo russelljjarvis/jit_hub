@@ -10,7 +10,7 @@ from sciunit import capabilities as scap
 from neuronunit import capabilities as ncap
 
 from bluepyopt.ephys.models import CellModel
-from neuronunit.optimization.data_transport_container import DataTC
+from neuronunit.models.optimization_model_layer import OptimizationModel
 
 class BPOModel(CellModel,ncap.ReceivesSquareCurrent,ncap.ProducesMembranePotential,scap.Runnable):
     def __init__(self,name,attrs={}):
@@ -71,9 +71,8 @@ class BPOModel(CellModel,ncap.ReceivesSquareCurrent,ncap.ProducesMembranePotenti
             dtc
             DTC is a simulator indipendent data transport container object.
         """
-        from neuronunit.optimization.data_transport_container import DataTC
 
-        dtc = DataTC(backend=self.backend)
+        dtc = OptimizationModel(backend=self.backend)
         dtc.attrs = self.attrs
         return dtc
 
@@ -116,7 +115,7 @@ class BPOModel(CellModel,ncap.ReceivesSquareCurrent,ncap.ProducesMembranePotenti
 
 
 from sciunit.models import RunnableModel
-class ADEXPModel(JIT_ADEXPBackend,BPOModel,DataTC,RunnableModel):
+class ADEXPModel(JIT_ADEXPBackend,BPOModel,OptimizationModel,RunnableModel):
     def __init__(self, name="not_None", params=None):
         self.default_attrs = {}
         self.default_attrs['cm']=0.281
@@ -137,7 +136,7 @@ class ADEXPModel(JIT_ADEXPBackend,BPOModel,DataTC,RunnableModel):
             self.params = self.default_attrs
         self._attrs = self.params
         BPOModel.__init__(self,name)
-        DataTC.__init__(self,attrs=self.params,backend=self)
+        OptimizationModel.__init__(self,attrs=self.params,backend=self)
         RunnableModel._backend = JIT_ADEXPBackend
         self.morphology = None
         RunnableModel.morphology = None
@@ -145,7 +144,7 @@ class ADEXPModel(JIT_ADEXPBackend,BPOModel,DataTC,RunnableModel):
         self.ampl = 0
         self._attrs = self.params
 
-class IzhiModel(JIT_IZHIBackend,BPOModel,DataTC,RunnableModel):
+class IzhiModel(JIT_IZHIBackend,BPOModel,OptimizationModel,RunnableModel):
     def __init__(self, name=None, params=None, backend=JIT_IZHIBackend):
         self.default_attrs = {'C':89.7960714285714,
                               'a':0.01, 'b':15, 'c':-60, 'd':10, 'k':1.6,
@@ -156,7 +155,7 @@ class IzhiModel(JIT_IZHIBackend,BPOModel,DataTC,RunnableModel):
         else:
             self.params = self.default_attrs
         BPOModel.__init__(self,name)
-        DataTC.__init__(self,attrs=self.params,backend=self)
+        OptimizationModel.__init__(self,attrs=self.params,backend=self)
         RunnableModel._backend = JIT_IZHIBackend
         self.morphology = None
         RunnableModel.morphology = None
