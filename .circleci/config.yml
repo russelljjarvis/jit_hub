@@ -33,4 +33,4 @@ jobs:
       - run: pip install git+https://github.com/russelljjarvis/sciunit@dev
       - run: pip install -r requirements.txt;
       - run: pip install -e .;
-      - run: python unittest/basic_run.py
+      - run: python unittest/test_run.py
