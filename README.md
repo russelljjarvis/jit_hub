@@ -8,6 +8,10 @@ Models:
 
 To install.
 ```
+pip install jithub==0.1.0
+```
+or:
+```
 git clone -b dev https://github.com/russelljjarvis/jit_hub
 sudo pip install -e .
 ```
