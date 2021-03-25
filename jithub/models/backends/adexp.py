@@ -9,11 +9,10 @@ from sciunit.models.backends import Backend
 from sciunit.models import RunnableModel
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, Text
 from numba import float64, float32, guvectorize
+from numba import guvectorize, jit, float64, void
 
-# code is a very aggressive hack on this repository:
+# code once originated with this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
-#@cython.boundscheck(False)
-#@cython.wraparound(False)
 @jit(nopython=True)
 def evaluate_vm(
     time_trace,
@@ -65,60 +64,68 @@ def evaluate_vm(
         vm.append(v)
         i += 1
     return vm, spk_cnt
+##
+# this must be a sqaure.
+##
+#@guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
 
-@guvectorize([(float32[:],float32[:])], '(n)->(n)', nopython=True, target="cpu")
+#@guvectorize([(float32[:,:], float32[:,:])], '(m,l),(l,n)->(m,n)')#, target='cuda')
+
+#@guvectorize([(float64[:,:], float64[:,:])], '(l,n)->(m,n)', target='cpu')
+#@guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
+#@jit#([float64[:,:], float64[:,:]])
+@jit
 def evaluate_vm_collection(arr,vm):
-    cm = arr[0]
-    factored_out = arr[1]
-    v_reset = arr[2]
-    v = v_rest = arr[3]
-    tau_m = arr[4]
-    a = arr[5]
-    b = arr[6]
-    delta_T = arr[7]
-    tau_w = arr[8]
-    v_thresh = arr[9]
-    spike_delta = arr[10]
-    dt = arr[11]
-    start = arr[12]
-    stop = arr[13]
-    amp = arr[14]
-    padding = arr[15]
-    tMax = start + stop + padding
-    time_trace = np.arange(0, int(tMax+dt), dt)
-    spike_raster = np.zeros(len(time_trace))
-    len_time_trace = len(time_trace)
-    sim_len = int(len(time_trace))-1
-    arr_cnt = 0
-    w = 1
-    #result = vm = np.ones(len(time_trace))*v_rest
-    spk_cnt = 0
-    for t_ind in range(0, len_time_trace-1):
-        t = time_trace[t_ind]
-        I_scalar = 0
-        if start <= t <= stop:
-            I_scalar = amp
+    for i in range(arr.shape[0]):
+        cm = arr[i,0]
+        factored_out = arr[i,1]
+        v_reset = arr[i,2]
+        v = v_rest = arr[i,3]
+        tau_m = arr[i,4]
+        a = arr[i,5]
+        b = arr[i,6]
+        delta_T = arr[i,7]
+        tau_w = arr[i,8]
+        v_thresh = arr[i,9]
+        spike_delta = arr[i,10]
+        dt = arr[i,11]
+        start = arr[i,12]
+        stop = arr[i,13]
+        amp = arr[i,14]
+        padding = arr[i,15]
+        tMax = start + stop + padding
+        time_trace = np.arange(0, int(tMax+dt), dt)
+        spike_raster = np.zeros(len(time_trace))
+        len_time_trace = len(time_trace)
+        sim_len = int(len(time_trace))-1
+        arr_cnt = 0
+        w = 1
+        spk_cnt = 0
+        for t_ind in range(0, len_time_trace-1):
+            t = time_trace[t_ind]
+            I_scalar = 0
+            if start <= t <= stop:
+                I_scalar = amp
 
-        if spike_raster[t_ind]:
-            v = v_reset
-            w += b
-        dv = (
-            ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T))
-            / tau_m
-            + (I_scalar - w) / cm
-        ) * dt
-        v += dv
-        w += dt * (a * (v - v_rest) - w) / tau_w * dt
-        if v > v_thresh:
-            v = spike_delta
-            spike_raster[t_ind] = 1
+            if spike_raster[t_ind]:
+                v = v_reset
+                w += b
+            dv = (
+                ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T))
+                / tau_m
+                + (I_scalar - w) / cm
+            ) * dt
+            v += dv
+            w += dt * (a * (v - v_rest) - w) / tau_w * dt
+            if v > v_thresh:
+                v = spike_delta
+                spike_raster[t_ind] = 1
 
-            spk_cnt += 1
-        else:
-            spike_raster[t_ind] = 0
-        vm[t_ind] = v
-    #vm
-    #print(np.max(result),np.min(result))
+                spk_cnt += 1
+            else:
+                spike_raster[t_ind] = 0
+            vm[i,t_ind] = v
+    return vm
 
 
 class JIT_ADEXPBackend():
@@ -253,7 +260,7 @@ class JIT_ADEXPBackend():
         duration = float(duration)
         delay = float(delay)
         tMax = delay + duration + padding
-
+    
         self.set_stop_time(stop_time=tMax * pq.ms)
         tMax = float(self.tstop)
 
@@ -285,20 +292,30 @@ class JIT_ADEXPBackend():
     def vector_attrs(self, to_set_vec_attrs: list):
         self._vec_attrs = to_set_vec_attrs
         # stores parameters for a list of models.
+    @jit
+    def make_gene_array(self,gene_models):
+        '''
 
-    def inject_square_current_vectorized(self, arr):
-        #print(list_of_param_arrays[0])
-        v_rest = arr[0][3]
-        dt = arr[0][11]
-        start = arr[0][12]
-        stop = arr[0][13]
-        amp = arr[0][14]
-        padding = arr[0][15]
+        '''
+        param_vec = np.array([ np.array([ v for v in list(m.attrs.values())], dtype=np.float32) for m in gene_models ])
+        #self._backend.vector_attrs = param_vec
+        return param_vec
+
+    def eval_models_as_gene_array(self,models):
+        param_vec = self.make_gene_array(models)
+        results = self.inject_square_current_vectorized(param_vec)
+
+
+    @jit
+    def inject_square_current_vectorized(self, gene_param_arr):
+
+        dt = gene_param_arr[0,11]
+        start = gene_param_arr[0,12]
+        stop = gene_param_arr[0,13]
+        padding = gene_param_arr[0,15]
         tMax = start + stop + padding
         time_trace = np.arange(0, int(tMax+dt), dt)
-        vm = np.ones(len(time_trace))*v_rest
-        vm_returned = evaluate_vm_collection(arr[0],vm)
-        #print(list_of_param_arrays[0])
-        print(vm_returned)
-        print(evaluate_vm_collection.types)
+        volts = [-65.0 for i in range(0,len(time_trace))]
+        vm = np.array([ volts for i in range(0,np.shape(gene_param_arr)[0])])
+        vm_returned = evaluate_vm_collection(arr,vm)
         return vm_returned
