@@ -3,6 +3,5 @@ neo
 numpy
 scipy
 cython
-ipfx
-git+https://github.com/russelljjarvis/neuronunit@optimization
+neuronunitopt==0.19
 git+https://github.com/russelljjarvis/sciunit@dev

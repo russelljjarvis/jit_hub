@@ -19,15 +19,17 @@ jobs:
       - run: conda install numpy;
       - run: conda install numba;
       - run: conda install dask;
-      - run: apt-get install -y cpp gcc
+      - run: apt-get update
+      - run: apt-get install -y gcc
       - run: apt-get install -y libx11-6 python-dev git build-essential
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
       #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install pip --upgrade;
       - run: pip install neo
       - run: pip install cython
-      - run: pip install git+https://github.com/russelljjarvis/neuronunit@optimization
+      - run: pip install neuronunitopt==0.19
+      #- run: pip install git+https://github.com/russelljjarvis/neuronunit@optimization
       - run: pip install git+https://github.com/russelljjarvis/sciunit@dev
-      #- run pip install -r requirements.txt;
+      - run: pip install -r requirements.txt;
       - run: pip install -e .;
       - run: python unittest/basic_run.py
