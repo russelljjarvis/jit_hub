@@ -25,7 +25,7 @@ jobs:
       - run: apt-get install -y autoconf automake gcc g++ make gfortran
       #- run: pip install git+https://github.com/russelljjarvis/neuronunit@dev
       - run: pip install pip --upgrade;
-      - run: pip install neo
+      - run: pip install neo nose
       - run: pip install cython
       - run: pip install neuronunitopt==0.19
       - run: pip install git+https://github.com/russelljjarvis/BluePyOpt@neuronunit_reduced_cells
