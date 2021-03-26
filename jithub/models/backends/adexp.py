@@ -64,44 +64,46 @@ def evaluate_vm(
         vm.append(v)
         i += 1
     return vm, spk_cnt
+
+
 ##
 # this must be a sqaure.
 ##
-#@guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
+# @guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
 
-#@guvectorize([(float32[:,:], float32[:,:])], '(m,l),(l,n)->(m,n)')#, target='cuda')
+# @guvectorize([(float32[:,:], float32[:,:])], '(m,l),(l,n)->(m,n)')#, target='cuda')
 
-#@guvectorize([(float64[:,:], float64[:,:])], '(l,n)->(m,n)', target='cpu')
-#@guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
-#@jit#([float64[:,:], float64[:,:]])
+# @guvectorize([(float64[:,:], float64[:,:])], '(l,n)->(m,n)', target='cpu')
+# @guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
+# @jit#([float64[:,:], float64[:,:]])
 @jit
-def evaluate_vm_collection(arr,vm):
+def evaluate_vm_collection(arr, vm):
     for i in range(arr.shape[0]):
-        cm = arr[i,0]
-        factored_out = arr[i,1]
-        v_reset = arr[i,2]
-        v = v_rest = arr[i,3]
-        tau_m = arr[i,4]
-        a = arr[i,5]
-        b = arr[i,6]
-        delta_T = arr[i,7]
-        tau_w = arr[i,8]
-        v_thresh = arr[i,9]
-        spike_delta = arr[i,10]
-        dt = arr[i,11]
-        start = arr[i,12]
-        stop = arr[i,13]
-        amp = arr[i,14]
-        padding = arr[i,15]
+        cm = arr[i, 0]
+        factored_out = arr[i, 1]
+        v_reset = arr[i, 2]
+        v = v_rest = arr[i, 3]
+        tau_m = arr[i, 4]
+        a = arr[i, 5]
+        b = arr[i, 6]
+        delta_T = arr[i, 7]
+        tau_w = arr[i, 8]
+        v_thresh = arr[i, 9]
+        spike_delta = arr[i, 10]
+        dt = arr[i, 11]
+        start = arr[i, 12]
+        stop = arr[i, 13]
+        amp = arr[i, 14]
+        padding = arr[i, 15]
         tMax = start + stop + padding
-        time_trace = np.arange(0, int(tMax+dt), dt)
+        time_trace = np.arange(0, int(tMax + dt), dt)
         spike_raster = np.zeros(len(time_trace))
         len_time_trace = len(time_trace)
-        sim_len = int(len(time_trace))-1
+        sim_len = int(len(time_trace)) - 1
         arr_cnt = 0
         w = 1
         spk_cnt = 0
-        for t_ind in range(0, len_time_trace-1):
+        for t_ind in range(0, len_time_trace - 1):
             t = time_trace[t_ind]
             I_scalar = 0
             if start <= t <= stop:
@@ -111,8 +113,7 @@ def evaluate_vm_collection(arr,vm):
                 v = v_reset
                 w += b
             dv = (
-                ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T))
-                / tau_m
+                ((v_rest - v) + delta_T * np.exp((v - v_thresh) / delta_T)) / tau_m
                 + (I_scalar - w) / cm
             ) * dt
             v += dv
@@ -124,11 +125,11 @@ def evaluate_vm_collection(arr,vm):
                 spk_cnt += 1
             else:
                 spike_raster[t_ind] = 0
-            vm[i,t_ind] = v
+            vm[i, t_ind] = v
     return vm
 
 
-class JIT_ADEXPBackend():
+class JIT_ADEXPBackend:
     name = "ADEXP"
 
     def __init__(self, attrs={}):
@@ -136,7 +137,7 @@ class JIT_ADEXPBackend():
         self._attrs = attrs
         self.default_attrs = {}
         self.default_attrs["cm"] = 2.81
-        #self.default_attrs["v_spike"] = -40.0
+        # self.default_attrs["v_spike"] = -40.0
         self.default_attrs["v_reset"] = -70.6
         self.default_attrs["v_rest"] = -70.6
         self.default_attrs["tau_m"] = 9.3667
@@ -148,13 +149,11 @@ class JIT_ADEXPBackend():
         self.default_attrs["spike_delta"] = 30
         self.default_attrs["dt"] = 0.25
 
-
         if type(attrs) is not type(None):
             self._attrs = attrs
-        if not len(self._attrs):# is None:
+        if not len(self._attrs):  # is None:
             self._attrs = self.default_attrs
         self._vec_attrs = []
-
 
     def set_stop_time(self, stop_time=650 * pq.ms):
         """Sets the simulation duration
@@ -164,7 +163,7 @@ class JIT_ADEXPBackend():
 
     def simulate(
         self, attrs={}, T=50, dt=0.25, I_ext={}, spike_delta=50
-    ) -> Tuple[Any, int]:
+    ):  # -> Tuple[Any, int]:
         """
         -- Synpopsis: simulate model
         -- outputs vm and spike count
@@ -228,7 +227,7 @@ class JIT_ADEXPBackend():
                 self.model.attrs = {}
                 self.model.attrs.update(attrs)
 
-    def set_attrs(self,attrs):
+    def set_attrs(self, attrs):
         self.attrs = attrs
 
     def get_membrane_potential(self):
@@ -247,8 +246,8 @@ class JIT_ADEXPBackend():
         delay=10 * pq.ms,
         duration=500 * pq.ms,
         padding=0 * pq.ms,
-        dt = 0.25
-    ) ->AnalogSignal:
+        dt=0.25,
+    ):  # -> AnalogSignal:
         """Inputs: current : a dictionary with exactly three items, whose keys are: 'amplitude', 'delay', 'duration'
         Example: current = {'amplitude':float*pq.pA, 'delay':float*pq.ms, 'duration':float*pq.ms}}
         where \'pq\' is a physical unit representation, implemented by casting float values to the quanitities \'type\'.
@@ -260,17 +259,17 @@ class JIT_ADEXPBackend():
         duration = float(duration)
         delay = float(delay)
         tMax = delay + duration + padding
-    
+
         self.set_stop_time(stop_time=tMax * pq.ms)
         tMax = float(self.tstop)
 
         stim = {"start": delay, "stop": duration + delay, "pA": amplitude}
-        if 'dt' in self.attrs:
-            self.attrs['dt']
+        if "dt" in self.attrs:
+            self.attrs["dt"]
         else:
             dt = 0.1
         vm, n_spikes = self.simulate(attrs=self.attrs, T=tMax, dt=dt, I_ext=stim)
-        vM = AnalogSignal(vm, units=pq.mV, sampling_period=dt* pq.ms)
+        vM = AnalogSignal(vm, units=pq.mV, sampling_period=dt * pq.ms)
 
         self.vM = vM
         self.n_spikes = n_spikes
@@ -292,30 +291,33 @@ class JIT_ADEXPBackend():
     def vector_attrs(self, to_set_vec_attrs: list):
         self._vec_attrs = to_set_vec_attrs
         # stores parameters for a list of models.
-    @jit
-    def make_gene_array(self,gene_models):
-        '''
 
-        '''
-        param_vec = np.array([ np.array([ v for v in list(m.attrs.values())], dtype=np.float32) for m in gene_models ])
-        #self._backend.vector_attrs = param_vec
+    @jit
+    def make_gene_array(self, gene_models):
+        """"""
+        param_vec = np.array(
+            [
+                np.array([v for v in list(m.attrs.values())], dtype=np.float32)
+                for m in gene_models
+            ]
+        )
+        # self._backend.vector_attrs = param_vec
         return param_vec
 
-    def eval_models_as_gene_array(self,models):
+    def eval_models_as_gene_array(self, models):
         param_vec = self.make_gene_array(models)
         results = self.inject_square_current_vectorized(param_vec)
-
 
     @jit
     def inject_square_current_vectorized(self, gene_param_arr):
 
-        dt = gene_param_arr[0,11]
-        start = gene_param_arr[0,12]
-        stop = gene_param_arr[0,13]
-        padding = gene_param_arr[0,15]
+        dt = gene_param_arr[0, 11]
+        start = gene_param_arr[0, 12]
+        stop = gene_param_arr[0, 13]
+        padding = gene_param_arr[0, 15]
         tMax = start + stop + padding
-        time_trace = np.arange(0, int(tMax+dt), dt)
-        volts = [-65.0 for i in range(0,len(time_trace))]
-        vm = np.array([ volts for i in range(0,np.shape(gene_param_arr)[0])])
-        vm_returned = evaluate_vm_collection(arr,vm)
+        time_trace = np.arange(0, int(tMax + dt), dt)
+        volts = [-65.0 for i in range(0, len(time_trace))]
+        vm = np.array([volts for i in range(0, np.shape(gene_param_arr)[0])])
+        vm_returned = evaluate_vm_collection(arr, vm)
         return vm_returned
