@@ -8,6 +8,10 @@ Models:
 
 To install.
 ```
+pip install jithub==0.1.0
+```
+or:
+```
 git clone -b dev https://github.com/russelljjarvis/jit_hub
 sudo pip install -e .
 ```
@@ -16,3 +20,5 @@ sudo pip install -e .
 [![Build Status](https://circleci.com/gh/russelljjarvis/jit_hub/tree/neuronunit.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)
 
 [![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
+
+#[Examples](https://github.com/russelljjarvis/jit_hub/blob/neuronunit/jithub/examples/backend_test.ipynb)

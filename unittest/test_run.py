@@ -1,5 +1,5 @@
 import unittest
-
+import nose as nt
 import jithub
 from jithub.models import model_classes
 import quantities as pq
@@ -81,6 +81,7 @@ for i,amp in enumerate(IinRange):
 
     model.inject_square_current(**params)
     vm = model.get_membrane_potential()
+    nt.tools.assert_is_not_none(vm)
     t2 = time.time()
     if i==0:
         print('compile time taken on block {0} '.format(t2-t1))
@@ -107,3 +108,4 @@ for i,amp in enumerate(IinRange):
 
     model.inject_square_current(**params)
     vm = model.get_membrane_potential()
+    nt.tools.assert_is_not_none(vm)

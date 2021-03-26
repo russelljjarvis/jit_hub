@@ -9,14 +9,16 @@ import quantities as pq
 import numpy
 import copy
 from elephant.spike_train_generation import threshold_detection
-from capabilities import ProducesMembranePotential, ReceivesCurrent
+#from capabilities import ProducesMembranePotential, ReceivesCurrent
 
+from bluepyopt.parameters import Parameter
 
 class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
     name = None
 
-    def __init__(self, name=None, attrs=None, backend=None):
-        super().__init__(name=name, attrs=attrs, backend=backend)
+    def __init__(self, name, attrs=None, backend=None):
+        self.name = name
+        super(BaseModel,self).__init__(self.name,attrs=attrs,backend=backend)
         self.vM = None
         self.attrs = attrs
         self.temp_attrs = None
@@ -31,6 +33,17 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
     def get_spike_count(self):
         self.vM = self._backend.get_membrane_potential()
         thresh = threshold_detection(self.vM,0*qt.mV)
+        ##
+        # Reasoning for condition:
+        # humans think spikes have down strokes in addition
+        # to the upstroke, but only upstrokes are
+        # detected by threshold_detection
+        ##
+        if self.vM[-1]>0:
+            spikes = len(thresh) -1
+        else:
+            spikes = len(thresh)
+
         return len(thresh)
 
 
@@ -46,8 +59,9 @@ class BaseModel(RunnableModel, ProducesMembranePotential, ReceivesCurrent):
         return self.vM
 
 
-    #def set_attrs(self, attrs):
-    #    self.attrs = attrs
+    def set_attrs(self, attrs):
+        self.attrs = attrs
+        self._backend.attrs = attrs
 
     '''
     def step(amplitude, t_stop):
