@@ -319,5 +319,5 @@ class JIT_ADEXPBackend:
         time_trace = np.arange(0, int(tMax + dt), dt)
         volts = [-65.0 for i in range(0, len(time_trace))]
         vm = np.array([volts for i in range(0, np.shape(gene_param_arr)[0])])
-        vm_returned = evaluate_vm_collection(arr, vm)
+        vm_returned = evaluate_vm_collection(gene_param_arr, vm)
         return vm_returned
