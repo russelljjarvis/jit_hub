@@ -72,6 +72,7 @@ class BPOModel(CellModel,ncap.ReceivesSquareCurrent,ncap.ProducesMembranePotenti
             DTC is a simulator indipendent data transport container object.
         """
 
+
         dtc = OptimizationModel(backend=self.backend)
         dtc.attrs = self.attrs
         return dtc
@@ -160,9 +161,6 @@ class IzhiModel(JIT_IZHIBackend,BPOModel,OptimizationModel,RunnableModel):
         self.morphology = None
         RunnableModel.morphology = None
         RunnableModel.mechanisms = None
-
-        self.ampl = 0
-        self._attrs = self.params
 
 
 

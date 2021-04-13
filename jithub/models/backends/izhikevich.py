@@ -71,7 +71,10 @@ class JIT_IZHIBackend(Backend, RunnableModel):
 
         if self._attrs is None:
             self._attrs = self.default_attrs
-
+        #print(type(self._attrs))
+        #print(self._attrs)
+        #import pdb;
+        #pdb.set_trace()
         self.spikes = 0
 
     def set_stop_time(self, stop_time=650 * pq.ms):
@@ -112,8 +115,6 @@ class JIT_IZHIBackend(Backend, RunnableModel):
 
         return self.vM
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
     def inject_square_current(
         self,
         amplitude=100 * pq.pA,
@@ -129,8 +130,11 @@ class JIT_IZHIBackend(Backend, RunnableModel):
         Description: A parameterized means of applying current injection into defined
         Currently only single section neuronal models are supported, the neurite section is understood to be simply the soma.
         """
-        self.attrs['dt'] = dt
-        attrs = self.attrs
+        self.set_attrs({'dt':dt})
+        #import pdb;
+        #pdb.set_trace()
+
+        attrs = self._attrs
         if attrs is None:
             attrs = self.model.default_attrs
         amplitude = float(amplitude)
@@ -193,6 +197,8 @@ class JIT_IZHIBackend(Backend, RunnableModel):
     def attrs(self, attrs):
         if attrs is not None:
             self.default_attrs.update(attrs)
+            self._attrs = self.default_attrs
+
         else:
             self._attrs = self.default_attrs
 
@@ -202,6 +208,10 @@ class JIT_IZHIBackend(Backend, RunnableModel):
                 self.model.attrs.update(attrs)
     def set_attrs(self,attrs):
         self.attrs = attrs
+
+    @attrs.getter
+    def get_attrs(self):
+        return self._attrs# = attrs
 
     def wrap_known_i(self, i, times):
         everything = self.attrs
