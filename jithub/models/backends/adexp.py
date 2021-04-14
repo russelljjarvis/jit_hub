@@ -73,12 +73,26 @@ def evaluate_vm(
 
 # @guvectorize([(float32[:,:], float32[:,:])], '(m,l),(l,n)->(m,n)')#, target='cuda')
 
-# @guvectorize([(float64[:,:], float64[:,:])], '(l,n)->(m,n)', target='cpu')
 # @guvectorize([(float64[:,:], float64[:,:], float64[:,:])], '(m,l),(l,n)->(m,n)', target='cpu')
-# @jit#([float64[:,:], float64[:,:]])
-@jit
+# @jit#([float64vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  c ghf n[:,:], float64[:,:]])
+#@jit
+#@guvectorize(['(float32[:,:], float32[:,:])'],'(n,m)->(n,l)', target='cpu')
+#
+#     ufunc = guvectorize(['(int32[:,:], int32[:,:], int32[:,:])'],
+#                         "(x,y),(x,y),(x,y)")(guadd)#
+
+#  https://towardsdatascience.com/heres-how-to-use-cupy-to-make-numpy-700x-faster-4b920dda1f56
+'''
+import cupy as cp
+
+x_gpu = cp.ones((1000,1000,1000))
+cp.cuda.Stream.null.synchronize()
+'''
+#@guvectorize(['(int32[:,:], int32[:,:])'])
 def evaluate_vm_collection(arr, vm):
-    for i in range(arr.shape[0]):
+    n = arr.shape[0]
+    print(np.shape(arr),'in shape')
+    for i in range(n):
         cm = arr[i, 0]
         factored_out = arr[i, 1]
         v_reset = arr[i, 2]
@@ -126,7 +140,9 @@ def evaluate_vm_collection(arr, vm):
             else:
                 spike_raster[t_ind] = 0
             vm[i, t_ind] = v
-    return vm
+    print(np.shape(vm),'out shape')
+
+    #return vm
 
 
 class JIT_ADEXPBackend:
