@@ -1,7 +1,7 @@
 from neo import AnalogSignal
-import numpy as np
+#import numpy as np
 import quantities as pq
-import numpy
+#import numpy
 import cython
 from elephant.spike_train_generation import threshold_detection
 from numba import jit
@@ -10,6 +10,17 @@ from sciunit.models import RunnableModel
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, Text
 from numba import float64, float32, guvectorize
 from numba import guvectorize, jit, float64, void
+
+
+##
+# if cuda is available make numpy == cupy.
+##
+try:
+    from numba import cuda
+    device = cuda.get_current_device()
+    import cupy as np
+except:
+    import numpy as np
 
 # code once originated with this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
