@@ -34,4 +34,4 @@ jobs:
       - run: pip install -r requirements.txt;
       - run: pip install -e .;
       - run: python unittest/test_run.py
-      - run: nosetest unittest/test_numba_models.py
+      - run: nosetests unittest/test_numba_models.py
