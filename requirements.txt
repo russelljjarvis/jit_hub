@@ -3,5 +3,5 @@ neo
 numpy
 scipy
 cython
-neuronunitopt==0.19
+git+https://github.com/russelljjarvis/neuronunit@optimization
 git+https://github.com/russelljjarvis/sciunit@dev
