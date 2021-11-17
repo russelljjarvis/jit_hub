@@ -1,6 +1,6 @@
 # Numba/JIT reduced neuoronal models
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 Single neuronal models encoded in python language numba speed up.
 Note model waveforms are returned in Neo Format and model currents and voltages are represented with quantities units.
@@ -36,6 +36,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://russelljjarvis.github.io/home/"><img src="https://avatars.githubusercontent.com/u/7786645?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Russell Jarvis</b></sub></a><br /><a href="https://github.com/russelljjarvis/jit_hub/commits?author=russelljjarvis" title="Code">💻</a> <a href="https://github.com/russelljjarvis/jit_hub/commits?author=russelljjarvis" title="Documentation">📖</a> <a href="#ideas-russelljjarvis" title="Ideas, Planning, & Feedback">🤔</a> <a href="#design-russelljjarvis" title="Design">🎨</a> <a href="#infra-russelljjarvis" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="http://rick.gerk.in"><img src="https://avatars.githubusercontent.com/u/549787?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Richard C Gerkin</b></sub></a><br /><a href="https://github.com/russelljjarvis/jit_hub/commits?author=rgerkin" title="Code">💻</a> <a href="#ideas-rgerkin" title="Ideas, Planning, & Feedback">🤔</a></td>
   </tr>
 </table>
 
