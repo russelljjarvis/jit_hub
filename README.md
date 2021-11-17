@@ -1,4 +1,4 @@
-# numba reduced neuoronal models
+# Numba/JIT reduced neuoronal models
 Single neuronal models encoded in python language numba speed up.
 Note model waveforms are returned in Neo Format and model currents and voltages are represented with quantities units.
 Models:
