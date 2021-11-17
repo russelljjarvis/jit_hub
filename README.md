@@ -21,4 +21,4 @@ sudo pip install -e .
 
 [![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
 
-#[Examples](https://github.com/russelljjarvis/jit_hub/blob/neuronunit/jithub/examples/backend_test.ipynb)
+[Examples](https://github.com/russelljjarvis/jit_hub/blob/neuronunit/jithub/examples/backend_test.ipynb)
