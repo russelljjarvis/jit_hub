@@ -1,7 +1,9 @@
 # Numba/JIT reduced neuoronal models
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->[![Build Status](https://circleci.com/gh/russelljjarvis/jit_hub/tree/neuronunit.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)[![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
+<!-- ALL-CONTRIBUTORS-BADGE:END --> 
+[![Build Status](https://circleci.com/gh/russelljjarvis/jit_hub/tree/neuronunit.svg?style=svg)](https://app.circleci.com/pipelines/github/russelljjarvis/jit_hub/)
+[![DOI](https://zenodo.org/badge/304228004.svg)](https://zenodo.org/badge/latestdoi/304228004)
 
 Single neuronal models encoded in python language numba speed up.
 Note model waveforms are returned in Neo Format and model currents and voltages are represented with quantities units.
