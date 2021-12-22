@@ -3,5 +3,5 @@ neo
 numpy
 scipy
 cython
--e git+https://github.com/russelljjarvis/neuronunit@optimization#egg=neuronunit
+-e git+https://github.com/russelljjarvis/neuronunit@optimization
 -e git+https://github.com/russelljjarvis/sciunit@dev#egg=sciunit

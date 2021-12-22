@@ -15,13 +15,17 @@ from numba import guvectorize, jit, float64, void
 ##
 # if cuda is available make numpy == cupy.
 ##
+"""
 try:
     from numba import cuda
     device = cuda.get_current_device()
-    import cupy as np
-except:
     import numpy as np
 
+    import cupy as cnp
+except:
+    import numpy as np
+"""
+import numpy as np
 # code once originated with this repository:
 # https://github.com/ericjang/pyN, of which it now resembles very little.
 @jit(nopython=True)
@@ -100,9 +104,19 @@ x_gpu = cp.ones((1000,1000,1000))
 cp.cuda.Stream.null.synchronize()
 '''
 #@guvectorize(['(int32[:,:], int32[:,:])'])
-def evaluate_vm_collection(arr, vm):
+#from neuronunit.optimization_management import efel_evaluation
+from elephant.spike_train_generation import threshold_detection
+import pyspike as spk
+
+ALLEN_DURATION = 2000 * pq.ms
+ALLEN_DELAY = 1000 * pq.ms
+
+
+
+
+@jit(nopython=True)
+def evaluate_vm_collection(arr, vm):#, spikes):
     n = arr.shape[0]
-    print(np.shape(arr),'in shape')
     for i in range(n):
         cm = arr[i, 0]
         factored_out = arr[i, 1]
@@ -128,6 +142,7 @@ def evaluate_vm_collection(arr, vm):
         arr_cnt = 0
         w = 1
         spk_cnt = 0
+        #spikes = []
         for t_ind in range(0, len_time_trace - 1):
             t = time_trace[t_ind]
             I_scalar = 0
@@ -148,12 +163,14 @@ def evaluate_vm_collection(arr, vm):
                 spike_raster[t_ind] = 1
 
                 spk_cnt += 1
+                #spikes.append(t)
+
             else:
                 spike_raster[t_ind] = 0
             vm[i, t_ind] = v
-    print(np.shape(vm),'out shape')
+        #spikes[i,:] = spike_raster
 
-    #return vm
+    return vm#,spikes
 
 
 class JIT_ADEXPBackend:
@@ -266,6 +283,10 @@ class JIT_ADEXPBackend:
         stopTimeMs: duration in milliseconds
         """
         self.tstop = float(stop_time.rescale(pq.ms))
+    def get_spike_train(self):
+        #vm_used = AnalogSignal(vm_used, units=pq.mV, sampling_period=dt * pq.ms)
+        spikes = threshold_detection(self.vM)
+        return spikes
 
     def inject_square_current(
         self,
@@ -337,7 +358,7 @@ class JIT_ADEXPBackend:
 
     @jit
     def inject_square_current_vectorized(self, gene_param_arr):
-
+        nparam = np.shape(gene_param_arr)[0]
         dt = gene_param_arr[0, 11]
         start = gene_param_arr[0, 12]
         stop = gene_param_arr[0, 13]
@@ -345,6 +366,24 @@ class JIT_ADEXPBackend:
         tMax = start + stop + padding
         time_trace = np.arange(0, int(tMax + dt), dt)
         volts = [-65.0 for i in range(0, len(time_trace))]
-        vm = np.array([volts for i in range(0, np.shape(gene_param_arr)[0])])
-        vm_returned = evaluate_vm_collection(gene_param_arr, vm)
+        vm = np.array([volts for i in range(0, nparam)])
+        #spkt = np.array([i for i in range(0, np.shape(gene_param_arr)[0])])
+        #spikes = np.matrix((len(volts),nparam))
+
+        vm_returned = evaluate_vm_collection(gene_param_arr, vm)#, spikes)
         return vm_returned
+
+    #@jit
+
+    def evaluate_spk_collection(self,vmarr):
+        import matplotlib.pyplot as plt
+        n = vmarr.shape[0]
+        spkt = []
+        for i in range(n):
+            vm_used = vmarr[i, :]
+            dt = 0.1
+            vm_used = AnalogSignal(vm_used, units=pq.mV, sampling_period=dt * pq.ms)
+            spikes = threshold_detection(vm_used)
+            t = ALLEN_DURATION+ALLEN_DELAY
+            spkt.append(spk.SpikeTrain(spikes, edges=(0,t), is_sorted=True))
+        return spkt
